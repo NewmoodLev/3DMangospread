@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MangoMap — แผนภาพสวนมะม่วง 3D</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d1117; font-family:'Segoe UI','Sarabun',sans-serif; overflow:hidden; }
+canvas { display:block; }
+
+#topbar {
+  position:fixed; top:0; left:0; right:0; height:50px;
+  background:rgba(13,17,23,0.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; z-index:200;
+}
+#topbar h1 { color:#c8e6c9; font-size:15px; font-weight:600; }
+#topbar .sub { color:#558b2f; font-size:11px; margin-top:2px; }
+#topbar .badge {
+  background:rgba(46,125,50,0.25); border:1px solid rgba(46,125,50,0.5);
+  color:#81c784; border-radius:20px; padding:4px 12px; font-size:11px;
+}
+
+#legend {
+  position:fixed; top:62px; left:14px;
+  background:rgba(13,17,23,0.88); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.09); border-radius:10px;
+  padding:14px 16px; color:#e0e0e0; font-size:12px; z-index:100; min-width:188px;
+}
+#legend h3 { font-size:12px; font-weight:700; color:#81c784; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.6px; }
+.ls { margin-bottom:12px; }
+.ls h4 { font-size:10px; font-weight:600; color:#4db6ac; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; }
+.li { display:flex; align-items:center; gap:8px; margin-bottom:5px; line-height:1.3; }
+.sw { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
+.hbar { width:100%; height:10px; border-radius:4px; background:linear-gradient(to right,#c0392b,#f39c12,#27ae60); margin-bottom:3px; }
+.hlbl { display:flex; justify-content:space-between; color:#666; font-size:10px; }
+.sz { display:flex; align-items:flex-end; gap:6px; margin-top:4px; }
+.sz-tree { background:#2e7d32; border-radius:2px 2px 0 0; width:10px; }
+
+#statbox {
+  position:fixed; top:62px; right:14px;
+  background:rgba(13,17,23,0.88); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.09); border-radius:10px;
+  padding:14px 16px; color:#e0e0e0; font-size:12px; z-index:100; min-width:200px;
+}
+#statbox h3 { font-size:12px; font-weight:700; color:#81c784; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.6px; }
+.sr { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:12px; }
+.sl { color:#4db6ac; }
+.sv { color:#fff; font-weight:500; }
+
+#tooltip {
+  position:fixed; background:rgba(10,14,20,0.95);
+  backdrop-filter:blur(12px); border:1px solid rgba(129,199,132,0.35);
+  border-radius:8px; padding:11px 14px; color:#fff; font-size:12px;
+  pointer-events:none; display:none; z-index:300; min-width:168px;
+}
+#tooltip .tt { color:#81c784; font-weight:700; font-size:13px; margin-bottom:8px; }
+#tooltip .tr { display:flex; justify-content:space-between; margin-bottom:4px; gap:14px; }
+#tooltip .tk { color:#4db6ac; }
+#tooltip .tv { color:#fff; font-weight:500; }
+.hbar-mini { width:100%; height:6px; border-radius:3px; background:rgba(255,255,255,0.1); margin-top:8px; overflow:hidden; }
+.hbar-fill { height:100%; border-radius:3px; background:linear-gradient(to right,#e74c3c,#f39c12,#27ae60); }
+
+#hint {
+  position:fixed; bottom:14px; right:14px;
+  background:rgba(13,17,23,0.82); border:1px solid rgba(255,255,255,0.07);
+  border-radius:8px; padding:10px 14px; color:#666; font-size:11px; z-index:100; line-height:1.9;
+}
+
+#loading {
+  position:fixed; inset:0; background:#0d1117; display:flex;
+  align-items:center; justify-content:center; flex-direction:column;
+  z-index:999; gap:16px; color:#81c784; font-size:14px; text-align:center;
+}
+.spin {
+  width:40px; height:40px; border:3px solid rgba(129,199,132,0.2);
+  border-top-color:#81c784; border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+#err-msg { color:#f87171; font-size:13px; display:none; }
+
+/* ── Simulation Panel ── */
+#sim-panel {
+  display:none; position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+  background:rgba(10,14,20,0.97); backdrop-filter:blur(16px);
+  border:1px solid rgba(139,92,246,0.3); border-radius:14px;
+  padding:18px 22px; z-index:200; width:580px; max-width:95vw;
+  color:#e0e0e0; font-size:12px; box-shadow:0 8px 40px rgba(0,0,0,0.7);
+}
+.sim-title { font-size:13px; font-weight:700; color:#c4b5fd; letter-spacing:0.3px; }
+.seir-row  { margin-bottom:7px; }
+.seir-lbl  { display:flex; justify-content:space-between; margin-bottom:3px; }
+.seir-track{ background:rgba(255,255,255,0.07); border-radius:4px; height:7px; overflow:hidden; }
+.seir-bar  { height:100%; border-radius:4px; transition:width 0.35s ease; }
+.sbtn {
+  background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.45);
+  color:#c4b5fd; border-radius:6px; padding:6px 12px; font-size:11px;
+  cursor:pointer; font-family:inherit; transition:background .18s;
+}
+.sbtn:hover { background:rgba(139,92,246,0.35); }
+.sbtn.green { background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.45); color:#4ade80; }
+.sbtn.green:hover { background:rgba(34,197,94,0.35); }
+.sbtn.red   { background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.45); color:#f87171; }
+input[type=range] { width:100%; accent-color:#a78bfa; cursor:pointer; }
+.day-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
+  transition:all .3s;
+}
+.day-dot.done  { background:#6b7280; border-color:#6b7280; }
+.day-dot.active{ background:#a78bfa; border-color:#c4b5fd; box-shadow:0 0 6px #a78bfa; }
+.wind-btn {
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+  color:#9ca3af; border-radius:5px; padding:3px 7px; font-size:10px;
+  cursor:pointer; font-family:inherit; transition:all .15s;
+}
+.wind-btn:hover,.wind-btn.active { background:rgba(139,92,246,0.25); border-color:rgba(139,92,246,0.6); color:#c4b5fd; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin" id="spin"></div>
+  <div id="loading-text">กำลังโหลด Three.js...</div>
+  <div id="err-msg"></div>
+</div>
+
+<div id="topbar">
+  <div>
+    <h1>MangoMap — แผนภาพสวนมะม่วง 3 มิติ</h1>
+    <div class="sub">พันธุ์ NamDokMai · 260 ต้น · 26 แถว × 10 คอลัมน์ · ระยะห่าง 6 เมตร</div>
+  </div>
+  <div class="badge">WiJAI Simulation Tester</div>
+</div>
+
+<div id="legend">
+  <h3>คำอธิบายสัญลักษณ์</h3>
+  <div class="ls">
+    <h4>โซนอายุต้นไม้</h4>
+    <div class="li"><div class="sw" style="background:#1565c0;"></div><span>อายุ 6 ปี (ID 0–49)</span></div>
+    <div class="li"><div class="sw" style="background:#2e7d32;"></div><span>อายุ 5 ปี (ID 50–149)</span></div>
+    <div class="li"><div class="sw" style="background:#bf360c;"></div><span>อายุ 4 ปี (ID 150–199)</span></div>
+    <div class="li"><div class="sw" style="background:#6a1b9a;"></div><span>อายุ 3 ปี (ID 200–259)</span></div>
+  </div>
+  <div class="ls">
+    <h4>ค่าสุขภาพ (Health)</h4>
+    <div class="hbar"></div>
+    <div class="hlbl"><span>0.70</span><span>0.85</span><span>1.00</span></div>
+  </div>
+  <div class="ls">
+    <h4>ขนาดต้นไม้</h4>
+    <div class="sz">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
+        <div class="sz-tree" style="height:32px;"></div><span>6 ปี</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
+        <div class="sz-tree" style="height:25px;"></div><span>5 ปี</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
+        <div class="sz-tree" style="height:18px;"></div><span>4 ปี</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
+        <div class="sz-tree" style="height:12px;"></div><span>3 ปี</span>
+      </div>
+    </div>
+    <div style="color:#555;font-size:10px;margin-top:8px;line-height:1.6;">↕ ความสูง = อายุต้น<br>🌿 ขนาดพุ่ม = ค่าสุขภาพ</div>
+  </div>
+  <div class="ls" id="seir-legend" style="display:none;">
+    <h4>สถานะ SEIR</h4>
+    <div class="li"><div class="sw" style="background:#4ade80;"></div><span>S — ปกติ (Susceptible)</span></div>
+    <div class="li"><div class="sw" style="background:#fbbf24;"></div><span>E — ฟักตัว (Exposed)</span></div>
+    <div class="li"><div class="sw" style="background:#ef4444;"></div><span>I — ติดเชื้อ (Infected)</span></div>
+    <div class="li"><div class="sw" style="background:#4b5563;"></div><span>R — หาย/แห้ง (Removed)</span></div>
+  </div>
+</div>
+
+<div id="statbox">
+  <h3>สถิติสวนมะม่วง</h3>
+  <div class="sr"><span class="sl">ต้นทั้งหมด</span><span class="sv">260 ต้น</span></div>
+  <div class="sr"><span class="sl">พันธุ์</span><span class="sv">NamDokMai</span></div>
+  <div class="sr"><span class="sl">ขนาดพื้นที่</span><span class="sv">54 × 150 ม.</span></div>
+  <div class="sr"><span class="sl">ระยะห่าง</span><span class="sv">6 เมตร</span></div>
+  <div class="sr"><span class="sl">สุขภาพเฉลี่ย</span><span class="sv" id="avg-h">—</span></div>
+  <div style="height:1px;background:rgba(255,255,255,0.07);margin:8px 0;"></div>
+  <div class="sr"><span class="sl">ต้นที่ชี้</span><span class="sv" id="hov-id">—</span></div>
+  <div class="sr"><span class="sl">สุขภาพ</span><span class="sv" id="hov-h">—</span></div>
+  <div style="height:1px;background:rgba(255,255,255,0.07);margin:8px 0;"></div>
+  <div class="sr">
+    <span class="sl" style="color:#f87171;">ต้นติดเชื้อ</span>
+    <span class="sv" style="color:#f87171;" id="inf-count">0 ต้น</span>
+  </div>
+  <button onclick="clearAllInfected()"
+    style="margin-top:6px;width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);
+           color:#f87171;border-radius:6px;padding:5px;font-size:11px;cursor:pointer;font-family:inherit;">
+    ล้างการติดเชื้อทั้งหมด
+  </button>
+  <div id="sim-notice" style="display:none;color:#fbbf24;font-size:10px;margin-top:6px;text-align:center;">
+    ⚠ กรุณาคลิกเลือกต้นติดเชื้อก่อน
+  </div>
+  <button onclick="startSimulation()"
+    style="margin-top:8px;width:100%;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.5);
+           color:#c4b5fd;border-radius:6px;padding:7px;font-size:12px;font-weight:600;
+           cursor:pointer;font-family:inherit;letter-spacing:0.3px;">
+    🧬 พยากรณ์การแพร่ระบาด
+  </button>
+</div>
+
+<div id="tooltip">
+  <div class="tt">ต้นมะม่วง #<span id="tt-id"></span>
+    <span id="tt-inf-badge" style="display:none;margin-left:6px;background:rgba(239,68,68,0.25);
+      border:1px solid rgba(239,68,68,0.6);color:#f87171;border-radius:10px;
+      padding:1px 7px;font-size:10px;font-weight:600;">ติดเชื้อ</span>
+  </div>
+  <div class="tr"><span class="tk">แถว / คอลัมน์</span><span class="tv"><span id="tt-row"></span> / <span id="tt-col"></span></span></div>
+  <div class="tr"><span class="tk">พิกัด (x, y)</span><span class="tv">(<span id="tt-x"></span>, <span id="tt-y"></span>) ม.</span></div>
+  <div class="tr"><span class="tk">อายุ</span><span class="tv"><span id="tt-age"></span> ปี</span></div>
+  <div class="tr"><span class="tk">สุขภาพ</span><span class="tv"><span id="tt-h"></span></span></div>
+  <div class="tr"><span class="tk">โซน</span><span class="tv"><span id="tt-zone"></span></span></div>
+  <div class="hbar-mini"><div class="hbar-fill" id="tt-hfill"></div></div>
+  <div class="tr" id="tt-seir-row" style="display:none;">
+    <span class="tk">สถานะ SEIR</span>
+    <span class="tv" id="tt-seir-state">—</span>
+  </div>
+  <div style="margin-top:9px;font-size:10px;color:#666;text-align:center;" id="tt-click-row">
+    คลิก → <span id="tt-click-hint" style="color:#f87171;">ทำเครื่องหมายติดเชื้อ</span>
+  </div>
+</div>
+
+<div id="hint">
+  🖱 ลากเมาส์ → หมุนมุมมอง<br>
+  🖱 Scroll → ซูมเข้า/ออก<br>
+  🖱 คลิกขวา+ลาก → เลื่อน<br>
+  🎯 ชี้ต้นไม้ → ดูข้อมูล
+</div>
+
+<!-- ═══ Simulation Panel ═══ -->
+<div id="sim-panel">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;">
+    <div>
+      <div class="sim-title">🧬 พยากรณ์การแพร่ระบาด — SEIR + ST-GNN</div>
+      <div style="color:#6b7280;font-size:10px;margin-top:3px;">
+        β=<span id="beta-disp">0.40</span> · σ=0.20 (ฟักตัว 5 วัน) · γ=0.07 (หาย 14 วัน) · ระยะแพร่~12 ม.
+      </div>
+    </div>
+    <button class="sbtn" onclick="closeSimPanel()" style="padding:3px 10px;flex-shrink:0;">✕</button>
+  </div>
+
+  <div style="display:flex;gap:20px;">
+    <!-- Left: Day + SEIR bars -->
+    <div style="flex:1;min-width:0;">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">วันที่</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;">
+          <div style="font-size:42px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums;" id="sim-day-num">0</div>
+          <div style="font-size:16px;color:#6b7280;font-weight:500;">/ 7</div>
+        </div>
+        <!-- 7-day dot progress -->
+        <div style="display:flex;gap:5px;justify-content:center;margin:7px 0 4px;">
+          <div class="day-dot" id="dd-1"></div><div class="day-dot" id="dd-2"></div>
+          <div class="day-dot" id="dd-3"></div><div class="day-dot" id="dd-4"></div>
+          <div class="day-dot" id="dd-5"></div><div class="day-dot" id="dd-6"></div>
+          <div class="day-dot" id="dd-7"></div>
+        </div>
+        <div style="font-size:11px;color:#a78bfa;margin-top:3px;" id="sim-status-txt">กด ▶ เพื่อเริ่ม</div>
+      </div>
+
+      <div class="seir-row">
+        <div class="seir-lbl"><span style="color:#4ade80;font-weight:600;">S ปกติ</span><span id="cnt-s" style="color:#9ca3af;">260</span></div>
+        <div class="seir-track"><div class="seir-bar" id="bar-s" style="background:#22c55e;width:100%;"></div></div>
+      </div>
+      <div class="seir-row">
+        <div class="seir-lbl"><span style="color:#fbbf24;font-weight:600;">E ฟักตัว</span><span id="cnt-e" style="color:#9ca3af;">0</span></div>
+        <div class="seir-track"><div class="seir-bar" id="bar-e" style="background:#f59e0b;width:0%;"></div></div>
+      </div>
+      <div class="seir-row">
+        <div class="seir-lbl"><span style="color:#f87171;font-weight:600;">I ติดเชื้อ</span><span id="cnt-i" style="color:#9ca3af;">0</span></div>
+        <div class="seir-track"><div class="seir-bar" id="bar-i" style="background:#ef4444;width:0%;"></div></div>
+      </div>
+      <div class="seir-row">
+        <div class="seir-lbl"><span style="color:#6b7280;font-weight:600;">R หาย/แห้ง</span><span id="cnt-r" style="color:#9ca3af;">0</span></div>
+        <div class="seir-track"><div class="seir-bar" id="bar-r" style="background:#4b5563;width:0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Right: Controls -->
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:210px;">
+      <!-- Play / Step -->
+      <div style="display:flex;gap:6px;">
+        <button class="sbtn green" id="btn-playpause" onclick="toggleSimPlay()" style="flex:1;font-size:13px;">
+          ▶ เล่น
+        </button>
+        <button class="sbtn" onclick="stepSimForward()" title="+1 วัน">+1 วัน</button>
+        <button class="sbtn red" onclick="resetSimulation()" title="รีเซ็ต">↺</button>
+      </div>
+
+      <!-- Speed -->
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:#6b7280;">
+          <span>ความเร็ว</span><span id="speed-lbl">ปกติ</span>
+        </div>
+        <input type="range" min="1" max="5" value="3" id="speed-slider" oninput="updateSimSpeed(this.value)">
+      </div>
+
+      <!-- Beta slider -->
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:#6b7280;">
+          <span>β อัตราแพร่ระบาด</span><span id="beta-disp2" style="color:#f87171;">0.40</span>
+        </div>
+        <input type="range" min="5" max="90" value="40" id="beta-slider" oninput="updateBeta(this.value)"
+               style="accent-color:#f87171;">
+      </div>
+
+      <!-- Wind -->
+      <div>
+        <div style="font-size:10px;color:#6b7280;margin-bottom:5px;">ทิศทางลม (กดเพื่อเลือก)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:140px;">
+          <button class="wind-btn" onclick="setWind(-0.7,-0.7,'↖')" id="w-nw">↖ NW</button>
+          <button class="wind-btn" onclick="setWind(0,-1,'↑')"     id="w-n" >↑ N</button>
+          <button class="wind-btn" onclick="setWind(0.7,-0.7,'↗')" id="w-ne">↗ NE</button>
+          <button class="wind-btn" onclick="setWind(-1,0,'←')"     id="w-w" >← W</button>
+          <button class="wind-btn" style="background:rgba(255,255,255,0.03);cursor:default;color:#374151;">✦</button>
+          <button class="wind-btn" onclick="setWind(1,0,'→')"      id="w-e" >→ E</button>
+          <button class="wind-btn" onclick="setWind(-0.7,0.7,'↙')" id="w-sw">↙ SW</button>
+          <button class="wind-btn" onclick="setWind(0,1,'↓')"      id="w-s" >↓ S</button>
+          <button class="wind-btn" onclick="setWind(0.7,0.7,'↘')" id="w-se" class="active">↘ SE</button>
+        </div>
+        <div style="font-size:10px;color:#6b7280;margin-top:4px;">ลมปัจจุบัน: <span id="wind-lbl" style="color:#c4b5fd;">↘ SE</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js จาก cdnjs (reliable, ไม่ต้องใช้ module) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+<script>
+// ─── ตรวจสอบ THREE โหลดสำเร็จ ────────────────────────────────────────────
+function showErr(msg) {
+  document.getElementById('spin').style.display = 'none';
+  document.getElementById('loading-text').textContent = '';
+  var e = document.getElementById('err-msg');
+  e.textContent = msg;
+  e.style.display = 'block';
+}
+
+if (typeof THREE === 'undefined') {
+  showErr('❌ โหลด Three.js ไม่ได้ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+} else {
+  try { initScene(); }
+  catch(err) { showErr('❌ Error: ' + err.message); console.error(err); }
+}
+
+// ─── Minimal OrbitControls (inline — ไม่ต้องโหลดไฟล์เพิ่ม) ──────────────
+function createOrbitControls(camera, domElement, target) {
+  var state = {
+    theta: Math.atan2(
+      camera.position.x - target.x,
+      camera.position.z - target.z
+    ),
+    phi: Math.acos(
+      Math.max(-1, Math.min(1,
+        (camera.position.y - target.y) /
+        camera.position.distanceTo(target)
+      ))
+    ),
+    radius: camera.position.distanceTo(target),
+    dTheta: 0, dPhi: 0,
+    panX: 0, panY: 0,
+    drag: false, rightDrag: false,
+    lx: 0, ly: 0,
+    dampF: 0.1,
+    minR: 10, maxR: 350,
+    maxPhi: Math.PI * 0.47
+  };
+
+  domElement.addEventListener('mousedown', function(e) {
+    if (e.button === 0) state.drag = true;
+    if (e.button === 2) state.rightDrag = true;
+    state.lx = e.clientX; state.ly = e.clientY;
+  });
+  window.addEventListener('mouseup', function() {
+    state.drag = false; state.rightDrag = false;
+  });
+  window.addEventListener('mousemove', function(e) {
+    var dx = e.clientX - state.lx, dy = e.clientY - state.ly;
+    state.lx = e.clientX; state.ly = e.clientY;
+    if (state.drag) {
+      state.dTheta -= dx * 0.007;
+      state.dPhi   -= dy * 0.007;
+    }
+    if (state.rightDrag) {
+      var fovRad = camera.fov * Math.PI / 180;
+      var h = domElement.clientHeight || window.innerHeight;
+      var scale = (2 * Math.tan(fovRad / 2) * state.radius) / h;
+      state.panX -= dx * scale;
+      state.panY += dy * scale;
+    }
+  });
+  domElement.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    state.radius *= (e.deltaY > 0 ? 1.12 : 0.88);
+    state.radius = Math.max(state.minR, Math.min(state.maxR, state.radius));
+  }, { passive: false });
+  domElement.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+  function update() {
+    // Apply damped rotation
+    state.theta += state.dTheta * state.dampF;
+    state.phi   += state.dPhi   * state.dampF;
+    state.dTheta *= (1 - state.dampF);
+    state.dPhi   *= (1 - state.dampF);
+
+    // Clamp phi
+    state.phi = Math.max(0.05, Math.min(state.maxPhi, state.phi));
+
+    // Apply damped pan to target
+    var panRight = new THREE.Vector3(
+      Math.cos(state.theta), 0, -Math.sin(state.theta)
+    ).normalize();
+    var panUp = new THREE.Vector3(0, 1, 0);
+    target.addScaledVector(panRight, state.panX * state.dampF);
+    target.addScaledVector(panUp,    state.panY * state.dampF);
+    state.panX *= (1 - state.dampF);
+    state.panY *= (1 - state.dampF);
+
+    // Recompute camera position from spherical
+    var sinPhi = Math.sin(state.phi);
+    camera.position.set(
+      target.x + state.radius * sinPhi * Math.sin(state.theta),
+      target.y + state.radius * Math.cos(state.phi),
+      target.z + state.radius * sinPhi * Math.cos(state.theta)
+    );
+    camera.lookAt(target);
+  }
+
+  return { update: update, target: target };
+}
+
+// ─── Scene ────────────────────────────────────────────────────────────────
+function initScene() {
+
+// ── ข้อมูลต้นไม้ (จาก orchard_real.csv) ──────────────────────────────────
+var ROWS = 26, COLS = 10, SPACING = 6;
+
+var healthArr = [
+  // age 6 (ID 0–49)
+  0.72,0.72,0.91,0.71,0.74,0.99,0.80,0.80,0.86,0.84,
+  0.88,0.77,0.76,0.78,0.92,0.72,0.95,0.94,0.82,0.78,
+  0.73,0.83,0.76,0.89,0.78,0.86,0.91,0.99,0.95,0.92,
+  0.81,0.96,0.95,0.94,0.75,0.87,0.97,0.89,0.86,0.97,
+  0.71,0.83,0.89,0.74,0.92,0.78,0.71,0.89,0.90,0.84,
+  // age 5 (ID 50–149)
+  0.72,0.85,0.78,0.85,0.74,0.95,0.71,0.79,0.79,0.79,
+  0.89,0.98,0.95,0.73,0.90,0.79,0.86,0.97,0.76,0.72,
+  0.76,0.97,0.92,1.00,0.81,0.96,0.88,0.93,0.98,0.75,
+  0.76,0.77,0.81,0.92,0.87,0.74,0.74,0.70,0.77,0.83,
+  0.91,0.72,0.87,0.81,0.79,0.78,0.95,0.73,0.82,0.96,
+  0.82,0.90,0.86,0.82,0.75,0.83,0.88,0.73,0.70,0.81,
+  0.84,0.73,0.77,0.80,0.89,0.91,0.98,0.70,0.88,0.80,
+  0.82,0.85,0.92,0.73,0.83,0.92,0.71,0.96,0.72,0.71,
+  0.87,0.98,0.79,0.88,0.96,0.88,0.86,0.71,0.74,0.79,
+  0.73,0.77,0.82,0.73,0.93,0.99,0.83,0.91,0.97,0.91,
+  // age 4 (ID 150–199)
+  0.79,0.90,0.71,0.83,0.91,0.86,0.73,0.75,0.99,0.92,
+  0.91,1.00,0.84,0.96,0.99,0.75,0.90,0.95,0.95,0.76,
+  0.75,0.81,0.78,0.97,0.81,0.74,0.92,0.80,0.75,0.85,
+  0.90,0.97,0.76,0.70,0.78,0.76,0.97,0.73,0.80,0.85,
+  0.89,0.78,0.96,0.83,0.88,0.82,0.98,0.81,0.71,0.74,
+  // age 3 (ID 200–259)
+  0.85,0.90,0.71,0.71,0.98,0.76,0.76,0.99,0.91,0.71,
+  0.87,0.71,0.78,0.88,0.92,0.72,0.82,0.87,0.98,0.99,
+  0.77,0.82,0.82,0.98,0.95,0.75,0.92,0.81,0.75,0.89,
+  0.95,0.73,0.81,0.84,0.70,0.77,0.88,0.76,0.89,0.74,
+  0.81,0.95,0.76,0.87,0.71,0.74,0.85,0.73,0.84,0.82,
+  0.71,0.80,0.96,0.71,0.80,0.76,0.71,0.87,0.73,0.80
+];
+
+var trees = [];
+for (var r = 0; r < ROWS; r++) {
+  for (var c = 0; c < COLS; c++) {
+    var id = r * COLS + c;
+    var age = id < 50 ? 6 : id < 150 ? 5 : id < 200 ? 4 : 3;
+    trees.push({ id:id, row:r, col:c, x:c*SPACING, z:r*SPACING, age:age, h:healthArr[id] });
+  }
+}
+
+var sumH = 0;
+for (var i = 0; i < trees.length; i++) sumH += trees[i].h;
+document.getElementById('avg-h').textContent = (sumH / trees.length).toFixed(3);
+
+// ── Three.js Setup ─────────────────────────────────────────────────────────
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111820);
+scene.fog = new THREE.Fog(0x111820, 120, 280);
+
+var W = window.innerWidth, H = window.innerHeight;
+var camera = new THREE.PerspectiveCamera(50, W/H, 0.5, 800);
+var orcharCX = (COLS-1)*SPACING/2;   // 27
+var orcharCZ = (ROWS-1)*SPACING/2;   // 75
+camera.position.set(orcharCX, 85, orcharCZ + 160);
+camera.lookAt(orcharCX, 0, orcharCZ);
+
+var renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+// ซ่อน loading screen
+document.getElementById('loading').style.display = 'none';
+
+// ── OrbitControls ──────────────────────────────────────────────────────────
+var target = new THREE.Vector3(orcharCX, 0, orcharCZ);
+var controls = createOrbitControls(camera, renderer.domElement, target);
+
+// ── Lights ─────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x9ab8d0, 0.8));
+
+var sun = new THREE.DirectionalLight(0xfffae0, 1.4);
+sun.position.set(40, 80, 60);
+sun.castShadow = true;
+sun.shadow.mapSize.width  = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.left   = -90;
+sun.shadow.camera.right  = 160;
+sun.shadow.camera.top    = 220;
+sun.shadow.camera.bottom = -30;
+sun.shadow.camera.near   = 1;
+sun.shadow.camera.far    = 400;
+scene.add(sun);
+scene.add(new THREE.DirectionalLight(0x4466aa, 0.35).position.set(-30,40,-20) && new THREE.DirectionalLight(0x4466aa, 0.35));
+
+// ── Ground ─────────────────────────────────────────────────────────────────
+var gnd = new THREE.Mesh(
+  new THREE.PlaneGeometry(130, 210),
+  new THREE.MeshLambertMaterial({ color: 0x253714 })
+);
+gnd.rotation.x = -Math.PI / 2;
+gnd.position.set(orcharCX, -0.05, orcharCZ);
+gnd.receiveShadow = true;
+scene.add(gnd);
+
+var grid = new THREE.GridHelper(210, 52, 0x1b2d0d, 0x1b2d0d);
+grid.position.set(orcharCX, 0.01, orcharCZ);
+grid.material.opacity = 0.35;
+grid.material.transparent = true;
+scene.add(grid);
+
+// ── Zone overlays ──────────────────────────────────────────────────────────
+var zonesDef = [
+  { z0:0,   z1:24,  col:0x081a40 },
+  { z0:30,  z1:84,  col:0x0b2b0b },
+  { z0:90,  z1:114, col:0x3a1200 },
+  { z0:120, z1:150, col:0x1e0040 }
+];
+for (var zi = 0; zi < zonesDef.length; zi++) {
+  var zd = zonesDef[zi];
+  var dz = zd.z1 - zd.z0;
+  var zm = new THREE.Mesh(
+    new THREE.PlaneGeometry(58, dz),
+    new THREE.MeshLambertMaterial({ color:zd.col, transparent:true, opacity:0.6 })
+  );
+  zm.rotation.x = -Math.PI / 2;
+  zm.position.set(orcharCX, 0.02, zd.z0 + dz/2);
+  zm.receiveShadow = true;
+  scene.add(zm);
+}
+
+// Zone separator lines
+var sepMat = new THREE.LineBasicMaterial({ color:0x2a4a2a, transparent:true, opacity:0.7 });
+[27, 87, 117].forEach(function(sz) {
+  var pts = [new THREE.Vector3(-2,0.1,sz), new THREE.Vector3(56,0.1,sz)];
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), sepMat));
+});
+
+// ── Tree parameters ─────────────────────────────────────────────────────────
+var TH = { 6:4.2, 5:3.5, 4:2.7, 3:1.9 };  // trunk height
+var CR = { 6:2.1, 5:1.75, 4:1.4, 3:1.05 }; // canopy radius
+
+var trunkGeos = {}, canopyGeos = {};
+[3,4,5,6].forEach(function(a) {
+  trunkGeos[a]  = new THREE.CylinderGeometry(0.18, 0.3, TH[a], 8);
+  canopyGeos[a] = new THREE.SphereGeometry(CR[a], 10, 8);
+});
+
+var trunkCols = { 6:0x3b2008, 5:0x4d2d0e, 4:0x5e3815, 3:0x6b4520 };
+var trunkMats = {};
+[3,4,5,6].forEach(function(a) {
+  trunkMats[a] = new THREE.MeshLambertMaterial({ color:trunkCols[a] });
+});
+
+function lerpColor(t) {
+  // t: 0.7→red, 0.85→yellow, 1.0→green
+  var u = Math.max(0, Math.min(1, (t - 0.7) / 0.3));
+  var r, g, b;
+  if (u < 0.5) {
+    var v = u * 2;
+    r = Math.round((0.753 + (0.976-0.753)*v) * 255);
+    g = Math.round((0.224 + (0.780-0.224)*v) * 255);
+    b = Math.round((0.169 + (0.310-0.169)*v) * 255);
+  } else {
+    var v = (u - 0.5) * 2;
+    r = Math.round((0.976 + (0.176-0.976)*v) * 255);
+    g = Math.round((0.780 + (0.776-0.780)*v) * 255);
+    b = Math.round((0.310 + (0.325-0.310)*v) * 255);
+  }
+  return (r << 16) | (g << 8) | b;
+}
+
+// ── Build trees ────────────────────────────────────────────────────────────
+var canopyMeshes = [];
+
+for (var ti = 0; ti < trees.length; ti++) {
+  var t = trees[ti];
+  var th = TH[t.age], cr = CR[t.age];
+  var hs = 0.82 + t.h * 0.18;
+
+  var trunk = new THREE.Mesh(trunkGeos[t.age], trunkMats[t.age]);
+  trunk.position.set(t.x, th/2, t.z);
+  trunk.castShadow = true;
+  scene.add(trunk);
+
+  var canopy = new THREE.Mesh(
+    canopyGeos[t.age],
+    new THREE.MeshLambertMaterial({ color: lerpColor(t.h) })
+  );
+  canopy.scale.setScalar(hs);
+  canopy.position.set(t.x, th + cr * hs * 0.72, t.z);
+  canopy.castShadow = true;
+  canopy.userData.tree = t;
+  scene.add(canopy);
+  canopyMeshes.push(canopy);
+}
+
+// ── Zone labels (canvas sprite) ────────────────────────────────────────────
+function makeSprite(text, color) {
+  var cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 40;
+  var ctx = cv.getContext('2d');
+  ctx.font = 'bold 18px Segoe UI';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 20);
+  var sp = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent:true, opacity:0.85 })
+  );
+  sp.scale.set(16, 2.5, 1);
+  return sp;
+}
+
+[
+  { z:12,  text:'โซน 1 — อายุ 6 ปี', color:'#60a5fa' },
+  { z:57,  text:'โซน 2 — อายุ 5 ปี', color:'#4ade80' },
+  { z:102, text:'โซน 3 — อายุ 4 ปี', color:'#fb923c' },
+  { z:135, text:'โซน 4 — อายุ 3 ปี', color:'#c084fc' }
+].forEach(function(lb) {
+  var sp = makeSprite(lb.text, lb.color);
+  sp.position.set(-8, 5, lb.z);
+  scene.add(sp);
+});
+
+// ── Infection tracking ─────────────────────────────────────────────────────
+var infected = {};          // tree.id → true/false
+var INF_COLOR = 0x8b0000;  // dark red สำหรับต้นติดเชื้อ
+
+function getTreeColor(tree) {
+  return infected[tree.id] ? INF_COLOR : lerpColor(tree.h);
+}
+
+function updateInfectedUI() {
+  var count = Object.keys(infected).length;
+  document.getElementById('inf-count').textContent = count + ' ต้น';
+}
+
+window.clearAllInfected = function() {
+  for (var id in infected) {
+    var mesh = canopyMeshes[parseInt(id)];
+    if (mesh) mesh.material.color.setHex(lerpColor(mesh.userData.tree.h));
+  }
+  infected = {};
+  updateInfectedUI();
+};
+
+// ── Raycaster / Tooltip ────────────────────────────────────────────────────
+var ray    = new THREE.Raycaster();
+var mouse2 = new THREE.Vector2();
+var tip    = document.getElementById('tooltip');
+var hovMesh = null, hovOrig = null;
+var mouseDownX = 0, mouseDownY = 0, didDrag = false;
+
+renderer.domElement.addEventListener('mousedown', function(e) {
+  mouseDownX = e.clientX; mouseDownY = e.clientY; didDrag = false;
+});
+
+window.addEventListener('mousemove', function(e) {
+  // ตรวจสอบ drag
+  if (Math.abs(e.clientX - mouseDownX) > 5 || Math.abs(e.clientY - mouseDownY) > 5) didDrag = true;
+
+  mouse2.x =  (e.clientX / innerWidth)  * 2 - 1;
+  mouse2.y = -(e.clientY / innerHeight) * 2 + 1;
+
+  ray.setFromCamera(mouse2, camera);
+  var hits = ray.intersectObjects(canopyMeshes, false);
+
+  if (hovMesh) {
+    hovMesh.material.color.setHex(hovOrig);
+    hovMesh = null;
+  }
+
+  if (hits.length > 0) {
+    var mesh = hits[0].object;
+    var t = mesh.userData.tree;
+    var isInf = !!infected[t.id];
+
+    // Restore color: SEIR state takes priority when sim is running
+    hovOrig = (seir.length > 0 && seir[t.id] !== 'S')
+      ? SCOL[seir[t.id]]
+      : getTreeColor(t);
+    mesh.material.color.set(0xffffff);
+    hovMesh = mesh;
+
+    var zone = t.id<50  ? 'โซน 1 (อายุ 6 ปี)' :
+               t.id<150 ? 'โซน 2 (อายุ 5 ปี)' :
+               t.id<200 ? 'โซน 3 (อายุ 4 ปี)' : 'โซน 4 (อายุ 3 ปี)';
+
+    document.getElementById('tt-id').textContent   = t.id;
+    document.getElementById('tt-row').textContent  = t.row+1;
+    document.getElementById('tt-col').textContent  = t.col+1;
+    document.getElementById('tt-x').textContent    = t.x;
+    document.getElementById('tt-y').textContent    = t.z;
+    document.getElementById('tt-age').textContent  = t.age;
+    document.getElementById('tt-h').textContent    = t.h.toFixed(2);
+    document.getElementById('tt-zone').textContent = zone;
+    document.getElementById('tt-hfill').style.width = ((t.h-0.7)/0.3*100).toFixed(0)+'%';
+    document.getElementById('tt-inf-badge').style.display = isInf ? 'inline' : 'none';
+    document.getElementById('tt-click-hint').textContent  = isInf ? 'คลิกเพื่อยกเลิกติดเชื้อ' : 'คลิกเพื่อทำเครื่องหมายติดเชื้อ';
+    document.getElementById('tt-click-hint').style.color  = isInf ? '#4ade80' : '#f87171';
+    // SEIR state (during simulation)
+    if (seir.length > 0) {
+      var ss = seir[t.id];
+      document.getElementById('tt-seir-state').textContent = SLBL[ss] || ss;
+      document.getElementById('tt-seir-state').style.color = SCOL_CSS[ss] || '#fff';
+    }
+
+    var lx = e.clientX + 18, ly = e.clientY - 10;
+    if (lx + 190 > innerWidth)  lx = e.clientX - 190 - 10;
+    if (ly + 210 > innerHeight) ly = innerHeight - 215;
+    tip.style.left = lx+'px'; tip.style.top = ly+'px';
+    tip.style.display = 'block';
+
+    document.getElementById('hov-id').textContent = '#'+t.id;
+    document.getElementById('hov-h').textContent  = t.h.toFixed(2);
+    renderer.domElement.style.cursor = 'pointer';
+  } else {
+    tip.style.display = 'none';
+    document.getElementById('hov-id').textContent = '—';
+    document.getElementById('hov-h').textContent  = '—';
+    renderer.domElement.style.cursor = 'grab';
+  }
+});
+
+// คลิกเพื่อ toggle ติดเชื้อ
+renderer.domElement.addEventListener('click', function(e) {
+  if (didDrag) return; // ถ้าลากอยู่ไม่ต้อง toggle
+
+  mouse2.x =  (e.clientX / innerWidth)  * 2 - 1;
+  mouse2.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mouse2, camera);
+  var hits = ray.intersectObjects(canopyMeshes, false);
+  if (!hits.length) return;
+
+  var mesh = hits[0].object;
+  var t    = mesh.userData.tree;
+
+  if (infected[t.id]) {
+    delete infected[t.id];
+    hovOrig = lerpColor(t.h);
+  } else {
+    infected[t.id] = true;
+    hovOrig = INF_COLOR;
+  }
+
+  // อัปเดต badge และ hint ใน tooltip ทันที
+  var isInfNow = !!infected[t.id];
+  document.getElementById('tt-inf-badge').style.display = isInfNow ? 'inline' : 'none';
+  document.getElementById('tt-click-hint').textContent  = isInfNow ? 'คลิกเพื่อยกเลิกติดเชื้อ' : 'คลิกเพื่อทำเครื่องหมายติดเชื้อ';
+  document.getElementById('tt-click-hint').style.color  = isInfNow ? '#4ade80' : '#f87171';
+
+  updateInfectedUI();
+});
+
+// ── Resize ─────────────────────────────────────────────────────────────────
+window.addEventListener('resize', function() {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ── Render loop ────────────────────────────────────────────────────────────
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  // pulse infected trees during simulation
+  if (seir && seir.length > 0) {
+    var t2 = Date.now() * 0.003;
+    for (var pi = 0; pi < canopyMeshes.length; pi++) {
+      if (seir[pi] === 'I') {
+        var s = 1 + 0.12 * Math.sin(t2 + pi * 0.8);
+        canopyMeshes[pi].scale.setScalar(s);
+      }
+    }
+  }
+  renderer.render(scene, camera);
+})();
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEIR + ST-GNN Disease Spread Simulation
+// ════════════════════════════════════════════════════════════════════════════
+
+var seir      = [];    // 'S','E','I','R' per tree index
+var adjList   = [];    // weighted adjacency list
+var simDay    = 0;
+var simMaxDay = 7;     // ล็อค 7 วัน
+var simPlaying= false;
+var simTimer  = null;
+var simSpeedMs= 400;
+var simBeta   = 0.40;
+var SIGMA     = 0.20;  // E→I per day (incubation ~5 days)
+var GAMMA     = 0.072; // I→R per day (recovery ~14 days)
+var LAMBDA    = 12.0;  // spatial spread range (meters)
+var WIND_NX   = 0.707, WIND_NZ = 0.707; // default SE
+
+var SCOL = { E:0xfbbf24, I:0xef4444, R:0x4b5563 };
+var SLBL = { S:'ปกติ', E:'ฟักตัว (Exposed)', I:'ติดเชื้อ (Infected)', R:'หาย/แห้ง (Removed)' };
+var SCOL_CSS = { S:'#4ade80', E:'#fbbf24', I:'#f87171', R:'#6b7280' };
+
+// ── Build weighted adjacency (anisotropic kernel: dist × wind) ──────────────
+function buildAdj() {
+  adjList = [];
+  for (var i = 0; i < trees.length; i++) adjList.push([]);
+  for (var i = 0; i < trees.length; i++) {
+    for (var j = i+1; j < trees.length; j++) {
+      var dx = trees[j].x - trees[i].x;
+      var dz = trees[j].z - trees[i].z;
+      var dist = Math.sqrt(dx*dx + dz*dz);
+      if (dist > 20) continue;           // only neighbors ≤ 20 m
+      var wD   = Math.exp(-dist / LAMBDA);
+      var nx   = dx/dist, nz = dz/dist;
+      var dotF = nx*WIND_NX + nz*WIND_NZ; // -1..1
+      var wIJ  = wD * Math.exp(0.5 *  dotF); // downwind: higher
+      var wJI  = wD * Math.exp(0.5 * -dotF); // upwind:   lower
+      adjList[i].push({ to:j, w:wIJ });
+      adjList[j].push({ to:i, w:wJI });
+    }
+  }
+}
+
+// ── SEIR step (one day) ────────────────────────────────────────────────────
+function stepSEIR() {
+  var next = seir.slice();
+  for (var i = 0; i < trees.length; i++) {
+    var s = seir[i];
+    if (s === 'S') {
+      var force = 0;
+      var nb = adjList[i];
+      for (var k = 0; k < nb.length; k++) {
+        if (seir[nb[k].to] === 'I') force += nb[k].w;
+      }
+      // Susceptibility: lower health → easier to infect
+      var susc = 1.6 - trees[i].h;          // 0.60..0.90
+      var pE   = 1 - Math.exp(-simBeta * force * susc);
+      if (Math.random() < pE) next[i] = 'E';
+    } else if (s === 'E') {
+      if (Math.random() < SIGMA) next[i] = 'I';
+    } else if (s === 'I') {
+      if (Math.random() < GAMMA) next[i] = 'R';
+    }
+  }
+  seir = next;
+}
+
+function countSEIR() {
+  var c = {S:0,E:0,I:0,R:0};
+  for (var i = 0; i < seir.length; i++) c[seir[i]]++;
+  return c;
+}
+
+// ── Update 3D colours from SEIR state ─────────────────────────────────────
+function applySimColors() {
+  for (var i = 0; i < canopyMeshes.length; i++) {
+    var t  = canopyMeshes[i].userData.tree;
+    var s  = seir[i];
+    canopyMeshes[i].material.color.setHex(s === 'S' ? lerpColor(t.h) : SCOL[s]);
+    if (s !== 'I') canopyMeshes[i].scale.setScalar(0.82 + t.h * 0.18);
+  }
+  hovMesh = null; // reset hover
+}
+
+// ── Update dot progress (7 days) ──────────────────────────────────────────
+function updateDots() {
+  for (var d = 1; d <= 7; d++) {
+    var el = document.getElementById('dd-'+d);
+    if (!el) continue;
+    el.className = 'day-dot';
+    if (d < simDay)  el.classList.add('done');
+    if (d === simDay) el.classList.add('active');
+  }
+}
+
+// ── Update DOM stats panel ─────────────────────────────────────────────────
+function updateSimUI() {
+  var c = countSEIR(), n = trees.length;
+  document.getElementById('sim-day-num').textContent = simDay;
+  document.getElementById('cnt-s').textContent = c.S;
+  document.getElementById('cnt-e').textContent = c.E;
+  document.getElementById('cnt-i').textContent = c.I;
+  document.getElementById('cnt-r').textContent = c.R;
+  document.getElementById('bar-s').style.width = (c.S/n*100).toFixed(1)+'%';
+  document.getElementById('bar-e').style.width = (c.E/n*100).toFixed(1)+'%';
+  document.getElementById('bar-i').style.width = (c.I/n*100).toFixed(1)+'%';
+  document.getElementById('bar-r').style.width = (c.R/n*100).toFixed(1)+'%';
+  updateDots();
+  var active = c.E + c.I;
+  var txt;
+  if (simDay >= simMaxDay) {
+    txt = '✅ ครบ 7 วัน — ติดเชื้อสะสม ' + (c.I + c.R) + ' ต้น';
+  } else if (active > 0) {
+    txt = 'กำลังแพร่ — E+I ' + active + ' ต้น';
+  } else if (simDay > 0) {
+    txt = '✓ ไม่พบการแพร่ระบาดเพิ่ม';
+  } else {
+    txt = 'กด ▶ เพื่อเริ่มพยากรณ์ 7 วัน';
+  }
+  document.getElementById('sim-status-txt').textContent = txt;
+}
+
+// ── One animation step ─────────────────────────────────────────────────────
+function advanceDay() {
+  if (simDay >= simMaxDay) { stopSim(); return; }
+  stepSEIR();
+  simDay++;
+  applySimColors();
+  updateSimUI();
+  var c = countSEIR();
+  if (c.E === 0 && c.I === 0 && simDay > 0) stopSim();
+}
+
+function stopSim() {
+  if (simTimer) { clearInterval(simTimer); simTimer = null; }
+  simPlaying = false;
+  document.getElementById('btn-playpause').textContent = '▶ เล่น';
+  document.getElementById('btn-playpause').className = 'sbtn green';
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────
+window.startSimulation = function() {
+  var keys = Object.keys(infected);
+  if (!keys.length) {
+    document.getElementById('sim-notice').style.display = 'block';
+    setTimeout(function(){ document.getElementById('sim-notice').style.display='none'; }, 2500);
+    return;
+  }
+  stopSim();
+  buildAdj();
+  seir = new Array(trees.length).fill('S');
+  for (var id in infected) seir[parseInt(id)] = 'I';
+  simDay = 0;
+  applySimColors();
+  updateSimUI();
+  document.getElementById('sim-panel').style.display = 'block';
+  document.getElementById('seir-legend').style.display = 'block';
+  document.getElementById('tt-click-row').style.display = 'none';
+  document.getElementById('tt-seir-row').style.display = 'flex';
+};
+
+window.toggleSimPlay = function() {
+  simPlaying = !simPlaying;
+  if (simPlaying) {
+    document.getElementById('btn-playpause').textContent = '⏸ หยุด';
+    document.getElementById('btn-playpause').className = 'sbtn';
+    simTimer = setInterval(advanceDay, simSpeedMs);
+  } else {
+    stopSim();
+  }
+};
+
+window.stepSimForward = function() {
+  if (!simPlaying && seir.length > 0) advanceDay();
+};
+
+window.resetSimulation = function() {
+  stopSim();
+  seir = new Array(trees.length).fill('S');
+  for (var id in infected) seir[parseInt(id)] = 'I';
+  simDay = 0;
+  applySimColors();
+  updateSimUI();
+  document.getElementById('btn-playpause').textContent = '▶ เล่น';
+  document.getElementById('btn-playpause').className = 'sbtn green';
+};
+
+window.closeSimPanel = function() {
+  stopSim();
+  seir = [];
+  document.getElementById('sim-panel').style.display = 'none';
+  document.getElementById('seir-legend').style.display = 'none';
+  document.getElementById('tt-click-row').style.display = 'block';
+  document.getElementById('tt-seir-row').style.display = 'none';
+  for (var i = 0; i < canopyMeshes.length; i++) {
+    var t = canopyMeshes[i].userData.tree;
+    canopyMeshes[i].material.color.setHex(getTreeColor(t));
+    canopyMeshes[i].scale.setScalar(0.82 + t.h * 0.18);
+  }
+  hovMesh = null;
+};
+
+window.updateSimSpeed = function(v) {
+  var lbl = ['ช้ามาก','ช้า','ปกติ','เร็ว','เร็วมาก'];
+  var ms  = [1200, 700, 380, 180, 70];
+  simSpeedMs = ms[v-1];
+  document.getElementById('speed-lbl').textContent = lbl[v-1];
+  if (simPlaying) { clearInterval(simTimer); simTimer = setInterval(advanceDay, simSpeedMs); }
+};
+
+window.updateBeta = function(v) {
+  simBeta = v / 100;
+  document.getElementById('beta-disp').textContent  = simBeta.toFixed(2);
+  document.getElementById('beta-disp2').textContent = simBeta.toFixed(2);
+};
+
+window.setWind = function(nx, nz, arrow) {
+  WIND_NX = nx; WIND_NZ = nz;
+  document.getElementById('wind-lbl').textContent = arrow + ' (' + ['NW','N','NE','W','','E','SW','S','SE'].join('') + ')';
+  document.getElementById('wind-lbl').textContent = arrow;
+  document.querySelectorAll('.wind-btn').forEach(function(b){ b.classList.remove('active'); });
+  var map = {'↖':'w-nw','↑':'w-n','↗':'w-ne','←':'w-w','→':'w-e','↙':'w-sw','↓':'w-s','↘':'w-se'};
+  if (map[arrow]) document.getElementById(map[arrow]).classList.add('active');
+  if (seir.length > 0) buildAdj(); // rebuild with new wind if sim running
+};
+
+// ── Override clearAllInfected to also stop sim ─────────────────────────────
+var _origClearAll = window.clearAllInfected;
+window.clearAllInfected = function() {
+  if (seir.length > 0) window.closeSimPanel();
+  _origClearAll();
+};
+
+// ── Tooltip SEIR state (update hover to show SEIR info) ───────────────────
+var _origMouseMove = null; // already bound above; patch via seir check in the handler
+// (the hover handler already references seir[] for badge; we update tt-seir-state there)
+
+} // end initScene
+</script>
+</body>
+</html>
