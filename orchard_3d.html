@@ -6,119 +6,138 @@
 <title>MangoMap — แผนภาพสวนมะม่วง 3D</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0d1117; font-family:'Segoe UI','Sarabun',sans-serif; overflow:hidden;
-       -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-canvas { display:block; touch-action: none; }
+body { background:#111808; font-family:'Sarabun','Segoe UI',sans-serif; overflow:hidden;
+       -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+canvas { display:block; touch-action:none; }
 
+/* ── Top bar ── */
 #topbar {
-  position:fixed; top:0; left:0; right:0; height:50px;
-  background:rgba(13,17,23,0.92); backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(255,255,255,0.08);
+  position:fixed; top:0; left:0; right:0; height:46px;
+  background:rgba(10,15,7,0.97); border-bottom:1px solid rgba(65,90,38,0.22);
   display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px; z-index:200;
+  padding:0 16px; z-index:200;
 }
-#topbar h1 { color:#c8e6c9; font-size:15px; font-weight:600; }
-#topbar .sub { color:#558b2f; font-size:11px; margin-top:2px; }
-#topbar .badge {
-  background:rgba(46,125,50,0.25); border:1px solid rgba(46,125,50,0.5);
-  color:#81c784; border-radius:20px; padding:4px 12px; font-size:11px;
-}
+#topbar h1 { color:#a8bc88; font-size:14px; font-weight:600; }
+#topbar .sub { color:#4a5c38; font-size:10.5px; margin-top:1px; }
+#topbar .badge { font-size:10px; color:#586e40; border:1px solid rgba(65,90,38,0.3); border-radius:4px; padding:2px 8px; }
 
-#legend {
-  position:fixed; top:62px; left:14px;
-  background:rgba(13,17,23,0.88); backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.09); border-radius:10px;
-  padding:14px 16px; color:#e0e0e0; font-size:12px; z-index:100; min-width:188px;
+/* ── Collapsible panels ── */
+.panel {
+  position:fixed; background:rgba(13,19,8,0.97); border:1px solid rgba(62,90,36,0.3);
+  border-radius:8px; color:#acbc8a; font-size:12px; z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,0.35); overflow:hidden;
 }
-#legend h3 { font-size:12px; font-weight:700; color:#81c784; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.6px; }
-.ls { margin-bottom:12px; }
-.ls h4 { font-size:10px; font-weight:600; color:#4db6ac; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; }
-.li { display:flex; align-items:center; gap:8px; margin-bottom:5px; line-height:1.3; }
-.sw { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
-.hbar { width:100%; height:10px; border-radius:4px; background:linear-gradient(to right,#c0392b,#f39c12,#27ae60); margin-bottom:3px; }
-.hlbl { display:flex; justify-content:space-between; color:#666; font-size:10px; }
-.sz { display:flex; align-items:flex-end; gap:6px; margin-top:4px; }
-.sz-tree { background:#2e7d32; border-radius:2px 2px 0 0; width:10px; }
-
-#statbox {
-  position:fixed; top:62px; right:14px;
-  background:rgba(13,17,23,0.88); backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.09); border-radius:10px;
-  padding:14px 16px; color:#e0e0e0; font-size:12px; z-index:100; min-width:200px;
+.panel-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 12px; cursor:pointer; font-size:11.5px; font-weight:600; color:#729050;
 }
-#statbox h3 { font-size:12px; font-weight:700; color:#81c784; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.6px; }
-.sr { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:12px; }
-.sl { color:#4db6ac; }
-.sv { color:#fff; font-weight:500; }
+.panel-hd:hover { background:rgba(255,255,255,0.02); }
+.chev { font-size:10px; color:#486030; transition:transform .2s; margin-left:4px; }
+.panel.closed .chev { transform:rotate(-90deg); }
+.panel-bd { max-height:600px; overflow:hidden; transition:max-height .24s ease, opacity .2s; opacity:1; }
+.panel.closed .panel-bd { max-height:0; opacity:0; }
+.pi { padding:8px 12px 12px; }
 
+#legend  { top:56px; left:12px; width:184px; }
+#statbox { top:56px; right:12px; width:198px; }
+
+/* legend */
+.ls { margin-bottom:9px; }
+.ls h4 { font-size:10px; font-weight:600; color:#486038; margin-bottom:5px; }
+.li { display:flex; align-items:center; gap:7px; margin-bottom:4px; line-height:1.3; font-size:11.5px; }
+.sw { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+.hbar { width:100%; height:7px; border-radius:3px; background:linear-gradient(to right,#8c2418,#a07818,#267018); margin-bottom:2px; }
+.hlbl { display:flex; justify-content:space-between; color:#384e28; font-size:9.5px; }
+.sz { display:flex; align-items:flex-end; gap:5px; margin-top:3px; }
+.sz-tree { background:#2a5818; border-radius:2px 2px 0 0; width:9px; }
+
+/* statbox */
+.sr { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:10px; }
+.sl { color:#486038; font-size:11.5px; }
+.sv { color:#b8c898; font-weight:500; font-size:11.5px; }
+.divider { height:1px; background:rgba(62,90,36,0.22); margin:5px 0; }
+
+/* tooltip */
 #tooltip {
-  position:fixed; background:rgba(10,14,20,0.95);
-  backdrop-filter:blur(12px); border:1px solid rgba(129,199,132,0.35);
-  border-radius:8px; padding:11px 14px; color:#fff; font-size:12px;
-  pointer-events:none; display:none; z-index:300; min-width:168px;
+  position:fixed; background:rgba(10,15,7,0.97); border:1px solid rgba(65,100,38,0.28);
+  border-radius:7px; padding:10px 13px; color:#acbc8a; font-size:12px;
+  pointer-events:none; display:none; z-index:300; min-width:162px;
+  box-shadow:0 3px 14px rgba(0,0,0,0.45);
 }
-#tooltip .tt { color:#81c784; font-weight:700; font-size:13px; margin-bottom:8px; }
-#tooltip .tr { display:flex; justify-content:space-between; margin-bottom:4px; gap:14px; }
-#tooltip .tk { color:#4db6ac; }
-#tooltip .tv { color:#fff; font-weight:500; }
-.hbar-mini { width:100%; height:6px; border-radius:3px; background:rgba(255,255,255,0.1); margin-top:8px; overflow:hidden; }
-.hbar-fill { height:100%; border-radius:3px; background:linear-gradient(to right,#e74c3c,#f39c12,#27ae60); }
+#tooltip .tt { color:#729050; font-weight:700; font-size:12.5px; margin-bottom:6px; }
+#tooltip .tr { display:flex; justify-content:space-between; margin-bottom:3px; gap:12px; }
+#tooltip .tk { color:#486038; }
+#tooltip .tv { color:#b8c898; font-weight:500; }
+.hbar-mini { width:100%; height:5px; border-radius:3px; background:rgba(255,255,255,0.07); margin-top:7px; overflow:hidden; }
+.hbar-fill { height:100%; border-radius:3px; background:linear-gradient(to right,#8c2418,#a07818,#267018); }
 
+/* hint */
 #hint {
-  position:fixed; bottom:14px; right:14px;
-  background:rgba(13,17,23,0.82); border:1px solid rgba(255,255,255,0.07);
-  border-radius:8px; padding:10px 14px; color:#666; font-size:11px; z-index:100; line-height:1.9;
+  position:fixed; bottom:12px; right:12px;
+  background:rgba(10,15,7,0.92); border:1px solid rgba(58,84,30,0.2);
+  border-radius:7px; padding:9px 26px 9px 12px;
+  color:#384e28; font-size:10.5px; z-index:100; line-height:1.85;
 }
+#hint-x { position:absolute; top:5px; right:7px; cursor:pointer; color:#2e4222; font-size:15px; line-height:1; }
+#hint-x:hover { color:#729050; }
 
+/* loading */
 #loading {
-  position:fixed; inset:0; background:#0d1117; display:flex;
+  position:fixed; inset:0; background:#111808; display:flex;
   align-items:center; justify-content:center; flex-direction:column;
-  z-index:999; gap:16px; color:#81c784; font-size:14px; text-align:center;
+  z-index:999; gap:14px; color:#729050; font-size:13px; text-align:center;
 }
 .spin {
-  width:40px; height:40px; border:3px solid rgba(129,199,132,0.2);
-  border-top-color:#81c784; border-radius:50%;
-  animation:spin 0.8s linear infinite;
+  width:34px; height:34px; border:2px solid rgba(80,120,42,0.18);
+  border-top-color:#729050; border-radius:50%; animation:spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
-#err-msg { color:#f87171; font-size:13px; display:none; }
+#err-msg { color:#b83830; font-size:12px; display:none; }
 
-/* ── Simulation Panel ── */
+/* ── Simulation panel ── */
 #sim-panel {
-  display:none; position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
-  background:rgba(10,14,20,0.97); backdrop-filter:blur(16px);
-  border:1px solid rgba(139,92,246,0.3); border-radius:14px;
-  padding:18px 22px; z-index:200; width:580px; max-width:95vw;
-  color:#e0e0e0; font-size:12px; box-shadow:0 8px 40px rgba(0,0,0,0.7);
+  display:none; position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  background:rgba(11,10,18,0.97); border:1px solid rgba(78,65,128,0.28); border-radius:9px;
+  z-index:200; width:545px; max-width:95vw;
+  color:#aeaac8; font-size:12px; box-shadow:0 4px 24px rgba(0,0,0,0.55);
+  overflow:hidden;
 }
-.sim-title { font-size:13px; font-weight:700; color:#c4b5fd; letter-spacing:0.3px; }
-.seir-row  { margin-bottom:7px; }
-.seir-lbl  { display:flex; justify-content:space-between; margin-bottom:3px; }
-.seir-track{ background:rgba(255,255,255,0.07); border-radius:4px; height:7px; overflow:hidden; }
-.seir-bar  { height:100%; border-radius:4px; transition:width 0.35s ease; }
+#sim-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-bottom:1px solid rgba(78,65,128,0.2);
+}
+.sim-title { font-size:12.5px; font-weight:600; color:#8878b8; }
+.sim-sub { color:#48445e; font-size:10px; margin-top:2px; }
+#sim-min { color:#48445e; font-size:12px; cursor:pointer; padding:3px 7px; border-radius:4px; }
+#sim-min:hover { color:#8878b8; background:rgba(255,255,255,0.04); }
+#sim-bd { padding:14px 14px; transition:max-height .24s ease, opacity .2s; max-height:400px; overflow:hidden; opacity:1; }
+#sim-bd.mini { max-height:0; opacity:0; padding-top:0; padding-bottom:0; }
+
+.seir-row  { margin-bottom:6px; }
+.seir-lbl  { display:flex; justify-content:space-between; margin-bottom:2px; font-size:11px; }
+.seir-track{ background:rgba(255,255,255,0.06); border-radius:3px; height:6px; overflow:hidden; }
+.seir-bar  { height:100%; border-radius:3px; transition:width 0.3s ease; }
+
 .sbtn {
-  background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.45);
-  color:#c4b5fd; border-radius:6px; padding:6px 12px; font-size:11px;
-  cursor:pointer; font-family:inherit; transition:background .18s;
+  background:rgba(78,65,128,0.15); border:1px solid rgba(78,65,128,0.36);
+  color:#8878b8; border-radius:5px; padding:6px 12px; font-size:11.5px;
+  cursor:pointer; font-family:inherit; transition:background .15s;
 }
-.sbtn:hover { background:rgba(139,92,246,0.35); }
-.sbtn.green { background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.45); color:#4ade80; }
-.sbtn.green:hover { background:rgba(34,197,94,0.35); }
-.sbtn.red   { background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.45); color:#f87171; }
-input[type=range] { width:100%; accent-color:#a78bfa; cursor:pointer; }
-.day-dot {
-  width:10px; height:10px; border-radius:50%;
-  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
-  transition:all .3s;
-}
-.day-dot.done  { background:#6b7280; border-color:#6b7280; }
-.day-dot.active{ background:#a78bfa; border-color:#c4b5fd; box-shadow:0 0 6px #a78bfa; }
+.sbtn:hover { background:rgba(78,65,128,0.3); }
+.sbtn.green { background:rgba(42,112,32,0.15); border-color:rgba(42,112,32,0.38); color:#52a83c; }
+.sbtn.green:hover { background:rgba(42,112,32,0.28); }
+.sbtn.red   { background:rgba(148,38,32,0.15); border-color:rgba(148,38,32,0.38); color:#c84840; }
+
+input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
+.day-dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); transition:all .3s; }
+.day-dot.done  { background:#363450; border-color:#363450; }
+.day-dot.active{ background:#6858a0; border-color:#8878b8; box-shadow:0 0 5px #6858a0; }
 .wind-btn {
-  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
-  color:#9ca3af; border-radius:5px; padding:3px 7px; font-size:10px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  color:#585870; border-radius:4px; padding:4px 6px; font-size:10px;
   cursor:pointer; font-family:inherit; transition:all .15s;
 }
-.wind-btn:hover,.wind-btn.active { background:rgba(139,92,246,0.25); border-color:rgba(139,92,246,0.6); color:#c4b5fd; }
+.wind-btn:hover,.wind-btn.active { background:rgba(78,65,128,0.22); border-color:rgba(78,65,128,0.5); color:#8878b8; }
 </style>
 </head>
 <body>
@@ -131,82 +150,84 @@ input[type=range] { width:100%; accent-color:#a78bfa; cursor:pointer; }
 
 <div id="topbar">
   <div>
-    <h1>MangoMap — แผนภาพสวนมะม่วง 3 มิติ</h1>
-    <div class="sub">พันธุ์ NamDokMai · 260 ต้น · 26 แถว × 10 คอลัมน์ · ระยะห่าง 6 เมตร</div>
+    <h1>🥭 MangoMap — แผนภาพสวนมะม่วง 3D</h1>
+    <div class="sub">NamDokMai · 260 ต้น · 26×10 · ระยะห่าง 6 ม.</div>
   </div>
-  <div class="badge">WiJAI Simulation Tester</div>
+  <div class="badge">SEIR Simulation</div>
 </div>
 
-<div id="legend">
-  <h3>คำอธิบายสัญลักษณ์</h3>
-  <div class="ls">
-    <h4>โซนอายุต้นไม้</h4>
-    <div class="li"><div class="sw" style="background:#1565c0;"></div><span>อายุ 6 ปี (ID 0–49)</span></div>
-    <div class="li"><div class="sw" style="background:#2e7d32;"></div><span>อายุ 5 ปี (ID 50–149)</span></div>
-    <div class="li"><div class="sw" style="background:#bf360c;"></div><span>อายุ 4 ปี (ID 150–199)</span></div>
-    <div class="li"><div class="sw" style="background:#6a1b9a;"></div><span>อายุ 3 ปี (ID 200–259)</span></div>
+<div id="legend" class="panel">
+  <div class="panel-hd" onclick="togglePanel('legend')">
+    <span>คำอธิบาย</span><span class="chev">▾</span>
   </div>
-  <div class="ls">
-    <h4>ค่าสุขภาพ (Health)</h4>
-    <div class="hbar"></div>
-    <div class="hlbl"><span>0.70</span><span>0.85</span><span>1.00</span></div>
-  </div>
-  <div class="ls">
-    <h4>ขนาดต้นไม้</h4>
-    <div class="sz">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
-        <div class="sz-tree" style="height:32px;"></div><span>6 ปี</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
-        <div class="sz-tree" style="height:25px;"></div><span>5 ปี</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
-        <div class="sz-tree" style="height:18px;"></div><span>4 ปี</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#666;">
-        <div class="sz-tree" style="height:12px;"></div><span>3 ปี</span>
-      </div>
+  <div class="panel-bd"><div class="pi">
+    <div class="ls">
+      <h4>โซนอายุต้นไม้</h4>
+      <div class="li"><div class="sw" style="background:#1565c0;"></div><span>อายุ 6 ปี (ID 0–49)</span></div>
+      <div class="li"><div class="sw" style="background:#2e7d32;"></div><span>อายุ 5 ปี (ID 50–149)</span></div>
+      <div class="li"><div class="sw" style="background:#bf360c;"></div><span>อายุ 4 ปี (ID 150–199)</span></div>
+      <div class="li"><div class="sw" style="background:#6a1b9a;"></div><span>อายุ 3 ปี (ID 200–259)</span></div>
     </div>
-    <div style="color:#555;font-size:10px;margin-top:8px;line-height:1.6;">↕ ความสูง = อายุต้น<br>🌿 ขนาดพุ่ม = ค่าสุขภาพ</div>
-  </div>
-  <div class="ls" id="seir-legend" style="display:none;">
-    <h4>สถานะ SEIR</h4>
-    <div class="li"><div class="sw" style="background:#4ade80;"></div><span>S — ปกติ (Susceptible)</span></div>
-    <div class="li"><div class="sw" style="background:#fbbf24;"></div><span>E — ฟักตัว (Exposed)</span></div>
-    <div class="li"><div class="sw" style="background:#ef4444;"></div><span>I — ติดเชื้อ (Infected)</span></div>
-    <div class="li"><div class="sw" style="background:#4b5563;"></div><span>R — หาย/แห้ง (Removed)</span></div>
-  </div>
+    <div class="ls">
+      <h4>ค่าสุขภาพ (Health)</h4>
+      <div class="hbar"></div>
+      <div class="hlbl"><span>0.70</span><span>0.85</span><span>1.00</span></div>
+    </div>
+    <div class="ls">
+      <h4>ขนาดต้นไม้</h4>
+      <div class="sz">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#384e28;">
+          <div class="sz-tree" style="height:30px;"></div><span>6 ปี</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#384e28;">
+          <div class="sz-tree" style="height:23px;"></div><span>5 ปี</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#384e28;">
+          <div class="sz-tree" style="height:16px;"></div><span>4 ปี</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#384e28;">
+          <div class="sz-tree" style="height:10px;"></div><span>3 ปี</span>
+        </div>
+      </div>
+      <div style="color:#384e28;font-size:10px;margin-top:7px;line-height:1.6;">↕ ความสูง = อายุต้น<br>🌿 ขนาดพุ่ม = ค่าสุขภาพ</div>
+    </div>
+    <div class="ls" id="seir-legend" style="display:none;">
+      <h4>สถานะ SEIR</h4>
+      <div class="li"><div class="sw" style="background:#4ade80;"></div><span>S — ปกติ</span></div>
+      <div class="li"><div class="sw" style="background:#fbbf24;"></div><span>E — ฟักตัว</span></div>
+      <div class="li"><div class="sw" style="background:#ef4444;"></div><span>I — ติดเชื้อ</span></div>
+      <div class="li"><div class="sw" style="background:#4b5563;"></div><span>R — หาย/แห้ง</span></div>
+    </div>
+  </div></div>
 </div>
 
-<div id="statbox">
-  <h3>สถิติสวนมะม่วง</h3>
-  <div class="sr"><span class="sl">ต้นทั้งหมด</span><span class="sv">260 ต้น</span></div>
-  <div class="sr"><span class="sl">พันธุ์</span><span class="sv">NamDokMai</span></div>
-  <div class="sr"><span class="sl">ขนาดพื้นที่</span><span class="sv">54 × 150 ม.</span></div>
-  <div class="sr"><span class="sl">ระยะห่าง</span><span class="sv">6 เมตร</span></div>
-  <div class="sr"><span class="sl">สุขภาพเฉลี่ย</span><span class="sv" id="avg-h">—</span></div>
-  <div style="height:1px;background:rgba(255,255,255,0.07);margin:8px 0;"></div>
-  <div class="sr"><span class="sl">ต้นที่ชี้</span><span class="sv" id="hov-id">—</span></div>
-  <div class="sr"><span class="sl">สุขภาพ</span><span class="sv" id="hov-h">—</span></div>
-  <div style="height:1px;background:rgba(255,255,255,0.07);margin:8px 0;"></div>
-  <div class="sr">
-    <span class="sl" style="color:#f87171;">ต้นติดเชื้อ</span>
-    <span class="sv" style="color:#f87171;" id="inf-count">0 ต้น</span>
+<div id="statbox" class="panel">
+  <div class="panel-hd" onclick="togglePanel('statbox')">
+    <span>สถิติสวน</span><span class="chev">▾</span>
   </div>
-  <button onclick="clearAllInfected()"
-    style="margin-top:6px;width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);
-           color:#f87171;border-radius:6px;padding:5px;font-size:11px;cursor:pointer;font-family:inherit;">
-    ล้างการติดเชื้อทั้งหมด
-  </button>
-  <div id="sim-notice" style="display:none;color:#fbbf24;font-size:10px;margin-top:6px;text-align:center;">
-    ⚠ กรุณาคลิกเลือกต้นติดเชื้อก่อน
-  </div>
-  <button onclick="startSimulation()"
-    style="margin-top:8px;width:100%;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.5);
-           color:#c4b5fd;border-radius:6px;padding:7px;font-size:12px;font-weight:600;
-           cursor:pointer;font-family:inherit;letter-spacing:0.3px;">
-    🧬 พยากรณ์การแพร่ระบาด
-  </button>
+  <div class="panel-bd"><div class="pi">
+    <div class="sr"><span class="sl">ต้นทั้งหมด</span><span class="sv">260 ต้น</span></div>
+    <div class="sr"><span class="sl">พันธุ์</span><span class="sv">NamDokMai</span></div>
+    <div class="sr"><span class="sl">ขนาดพื้นที่</span><span class="sv">54 × 150 ม.</span></div>
+    <div class="sr"><span class="sl">สุขภาพเฉลี่ย</span><span class="sv" id="avg-h">—</span></div>
+    <div class="divider"></div>
+    <div class="sr"><span class="sl">ต้นที่ชี้</span><span class="sv" id="hov-id">—</span></div>
+    <div class="sr"><span class="sl">สุขภาพ</span><span class="sv" id="hov-h">—</span></div>
+    <div class="divider"></div>
+    <div class="sr">
+      <span class="sl" style="color:#c04040;">ต้นติดเชื้อ</span>
+      <span class="sv" style="color:#c04040;" id="inf-count">0 ต้น</span>
+    </div>
+    <button onclick="clearAllInfected()" class="sbtn red" style="margin-top:6px;width:100%;padding:5px;font-size:11px;">
+      ล้างการติดเชื้อ
+    </button>
+    <div id="sim-notice" style="display:none;color:#b89020;font-size:10px;margin-top:6px;text-align:center;">
+      ⚠ เลือกต้นติดเชื้อก่อนนะ
+    </div>
+    <button onclick="startSimulation()" class="sbtn" style="margin-top:8px;width:100%;padding:7px;font-size:12px;font-weight:600;">
+      🧬 พยากรณ์การแพร่ระบาด
+    </button>
+  </div></div>
 </div>
 
 <div id="tooltip">
@@ -231,104 +252,96 @@ input[type=range] { width:100%; accent-color:#a78bfa; cursor:pointer; }
 </div>
 
 <div id="hint">
+  <span id="hint-x" onclick="this.parentElement.style.display='none'">×</span>
   🖱 ลากเมาส์ → หมุนมุมมอง<br>
   🖱 Scroll → ซูมเข้า/ออก<br>
   🖱 คลิกขวา+ลาก → เลื่อน<br>
   🎯 ชี้/แตะต้นไม้ → ดูข้อมูล
 </div>
 
-<!-- ═══ Simulation Panel ═══ -->
+<!-- Simulation Panel -->
 <div id="sim-panel">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;">
+  <div id="sim-hd">
     <div>
-      <div class="sim-title">🧬 พยากรณ์การแพร่ระบาด — SEIR + ST-GNN</div>
-      <div style="color:#6b7280;font-size:10px;margin-top:3px;">
-        β=<span id="beta-disp">0.40</span> · σ=0.20 (ฟักตัว 5 วัน) · γ=0.07 (หาย 14 วัน) · ระยะแพร่~12 ม.
-      </div>
+      <div class="sim-title">🧬 พยากรณ์การแพร่ระบาด</div>
+      <div class="sim-sub">β=<span id="beta-disp">0.40</span> · σ=0.20 · γ=0.07 · ~12 ม.</div>
     </div>
-    <button class="sbtn" onclick="closeSimPanel()" style="padding:3px 10px;flex-shrink:0;">✕</button>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <span id="sim-min" onclick="toggleSimBody()" title="ย่อ/ขยาย">▾</span>
+      <button class="sbtn" onclick="closeSimPanel()" style="padding:2px 9px;font-size:12px;">✕</button>
+    </div>
   </div>
 
-  <div style="display:flex;gap:20px;">
-    <!-- Left: Day + SEIR bars -->
-    <div style="flex:1;min-width:0;">
-      <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">วันที่</div>
-        <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;">
-          <div style="font-size:42px;font-weight:700;color:#fff;line-height:1;font-variant-numeric:tabular-nums;" id="sim-day-num">0</div>
-          <div style="font-size:16px;color:#6b7280;font-weight:500;">/ 7</div>
+  <div id="sim-bd">
+    <div style="display:flex;gap:18px;">
+      <!-- Left: Day + SEIR -->
+      <div style="flex:1;min-width:0;">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-size:10px;color:#48445e;margin-bottom:2px;">วันที่</div>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;">
+            <div style="font-size:40px;font-weight:700;color:#d8d4f0;line-height:1;font-variant-numeric:tabular-nums;" id="sim-day-num">0</div>
+            <div style="font-size:15px;color:#48445e;font-weight:500;">/ 7</div>
+          </div>
+          <div style="display:flex;gap:5px;justify-content:center;margin:6px 0 3px;">
+            <div class="day-dot" id="dd-1"></div><div class="day-dot" id="dd-2"></div>
+            <div class="day-dot" id="dd-3"></div><div class="day-dot" id="dd-4"></div>
+            <div class="day-dot" id="dd-5"></div><div class="day-dot" id="dd-6"></div>
+            <div class="day-dot" id="dd-7"></div>
+          </div>
+          <div style="font-size:11px;color:#8878b8;margin-top:2px;" id="sim-status-txt">กด ▶ เพื่อเริ่ม</div>
         </div>
-        <!-- 7-day dot progress -->
-        <div style="display:flex;gap:5px;justify-content:center;margin:7px 0 4px;">
-          <div class="day-dot" id="dd-1"></div><div class="day-dot" id="dd-2"></div>
-          <div class="day-dot" id="dd-3"></div><div class="day-dot" id="dd-4"></div>
-          <div class="day-dot" id="dd-5"></div><div class="day-dot" id="dd-6"></div>
-          <div class="day-dot" id="dd-7"></div>
+        <div class="seir-row">
+          <div class="seir-lbl"><span style="color:#52a83c;font-weight:600;">S ปกติ</span><span id="cnt-s" style="color:#585870;">260</span></div>
+          <div class="seir-track"><div class="seir-bar" id="bar-s" style="background:#3a8830;width:100%;"></div></div>
         </div>
-        <div style="font-size:11px;color:#a78bfa;margin-top:3px;" id="sim-status-txt">กด ▶ เพื่อเริ่ม</div>
+        <div class="seir-row">
+          <div class="seir-lbl"><span style="color:#c8a020;font-weight:600;">E ฟักตัว</span><span id="cnt-e" style="color:#585870;">0</span></div>
+          <div class="seir-track"><div class="seir-bar" id="bar-e" style="background:#a88018;width:0%;"></div></div>
+        </div>
+        <div class="seir-row">
+          <div class="seir-lbl"><span style="color:#c84840;font-weight:600;">I ติดเชื้อ</span><span id="cnt-i" style="color:#585870;">0</span></div>
+          <div class="seir-track"><div class="seir-bar" id="bar-i" style="background:#a03830;width:0%;"></div></div>
+        </div>
+        <div class="seir-row">
+          <div class="seir-lbl"><span style="color:#585870;font-weight:600;">R หาย/แห้ง</span><span id="cnt-r" style="color:#585870;">0</span></div>
+          <div class="seir-track"><div class="seir-bar" id="bar-r" style="background:#404058;width:0%;"></div></div>
+        </div>
       </div>
 
-      <div class="seir-row">
-        <div class="seir-lbl"><span style="color:#4ade80;font-weight:600;">S ปกติ</span><span id="cnt-s" style="color:#9ca3af;">260</span></div>
-        <div class="seir-track"><div class="seir-bar" id="bar-s" style="background:#22c55e;width:100%;"></div></div>
-      </div>
-      <div class="seir-row">
-        <div class="seir-lbl"><span style="color:#fbbf24;font-weight:600;">E ฟักตัว</span><span id="cnt-e" style="color:#9ca3af;">0</span></div>
-        <div class="seir-track"><div class="seir-bar" id="bar-e" style="background:#f59e0b;width:0%;"></div></div>
-      </div>
-      <div class="seir-row">
-        <div class="seir-lbl"><span style="color:#f87171;font-weight:600;">I ติดเชื้อ</span><span id="cnt-i" style="color:#9ca3af;">0</span></div>
-        <div class="seir-track"><div class="seir-bar" id="bar-i" style="background:#ef4444;width:0%;"></div></div>
-      </div>
-      <div class="seir-row">
-        <div class="seir-lbl"><span style="color:#6b7280;font-weight:600;">R หาย/แห้ง</span><span id="cnt-r" style="color:#9ca3af;">0</span></div>
-        <div class="seir-track"><div class="seir-bar" id="bar-r" style="background:#4b5563;width:0%;"></div></div>
-      </div>
-    </div>
-
-    <!-- Right: Controls -->
-    <div style="display:flex;flex-direction:column;gap:10px;min-width:210px;">
-      <!-- Play / Step -->
-      <div style="display:flex;gap:6px;">
-        <button class="sbtn green" id="btn-playpause" onclick="toggleSimPlay()" style="flex:1;font-size:13px;">
-          ▶ เล่น
-        </button>
-        <button class="sbtn" onclick="stepSimForward()" title="+1 วัน">+1 วัน</button>
-        <button class="sbtn red" onclick="resetSimulation()" title="รีเซ็ต">↺</button>
-      </div>
-
-      <!-- Speed -->
-      <div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:#6b7280;">
-          <span>ความเร็ว</span><span id="speed-lbl">ปกติ</span>
+      <!-- Right: Controls -->
+      <div style="display:flex;flex-direction:column;gap:9px;min-width:205px;">
+        <div style="display:flex;gap:5px;">
+          <button class="sbtn green" id="btn-playpause" onclick="toggleSimPlay()" style="flex:1;font-size:13px;">▶ เล่น</button>
+          <button class="sbtn" onclick="stepSimForward()">+1 วัน</button>
+          <button class="sbtn red" onclick="resetSimulation()">↺</button>
         </div>
-        <input type="range" min="1" max="5" value="3" id="speed-slider" oninput="updateSimSpeed(this.value)">
-      </div>
-
-      <!-- Beta slider -->
-      <div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:#6b7280;">
-          <span>β อัตราแพร่ระบาด</span><span id="beta-disp2" style="color:#f87171;">0.40</span>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px;color:#48445e;">
+            <span>ความเร็ว</span><span id="speed-lbl">ปกติ</span>
+          </div>
+          <input type="range" min="1" max="5" value="3" id="speed-slider" oninput="updateSimSpeed(this.value)">
         </div>
-        <input type="range" min="5" max="90" value="40" id="beta-slider" oninput="updateBeta(this.value)"
-               style="accent-color:#f87171;">
-      </div>
-
-      <!-- Wind -->
-      <div>
-        <div style="font-size:10px;color:#6b7280;margin-bottom:5px;">ทิศทางลม (กดเพื่อเลือก)</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:140px;">
-          <button class="wind-btn" onclick="setWind(-0.7,-0.7,'↖')" id="w-nw">↖ NW</button>
-          <button class="wind-btn" onclick="setWind(0,-1,'↑')"     id="w-n" >↑ N</button>
-          <button class="wind-btn" onclick="setWind(0.7,-0.7,'↗')" id="w-ne">↗ NE</button>
-          <button class="wind-btn" onclick="setWind(-1,0,'←')"     id="w-w" >← W</button>
-          <button class="wind-btn" style="background:rgba(255,255,255,0.03);cursor:default;color:#374151;">✦</button>
-          <button class="wind-btn" onclick="setWind(1,0,'→')"      id="w-e" >→ E</button>
-          <button class="wind-btn" onclick="setWind(-0.7,0.7,'↙')" id="w-sw">↙ SW</button>
-          <button class="wind-btn" onclick="setWind(0,1,'↓')"      id="w-s" >↓ S</button>
-          <button class="wind-btn" onclick="setWind(0.7,0.7,'↘')" id="w-se" class="active">↘ SE</button>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px;color:#48445e;">
+            <span>β อัตราแพร่ระบาด</span><span id="beta-disp2" style="color:#c04840;">0.40</span>
+          </div>
+          <input type="range" min="5" max="90" value="40" id="beta-slider" oninput="updateBeta(this.value)" style="accent-color:#a03030;">
         </div>
-        <div style="font-size:10px;color:#6b7280;margin-top:4px;">ลมปัจจุบัน: <span id="wind-lbl" style="color:#c4b5fd;">↘ SE</span></div>
+        <div>
+          <div style="font-size:10px;color:#48445e;margin-bottom:4px;">ทิศทางลม</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:138px;">
+            <button class="wind-btn" onclick="setWind(-0.7,-0.7,'↖')" id="w-nw">↖ NW</button>
+            <button class="wind-btn" onclick="setWind(0,-1,'↑')"     id="w-n" >↑ N</button>
+            <button class="wind-btn" onclick="setWind(0.7,-0.7,'↗')" id="w-ne">↗ NE</button>
+            <button class="wind-btn" onclick="setWind(-1,0,'←')"     id="w-w" >← W</button>
+            <button class="wind-btn" style="background:rgba(255,255,255,0.02);cursor:default;color:#2e2c3e;">✦</button>
+            <button class="wind-btn" onclick="setWind(1,0,'→')"      id="w-e" >→ E</button>
+            <button class="wind-btn" onclick="setWind(-0.7,0.7,'↙')" id="w-sw">↙ SW</button>
+            <button class="wind-btn" onclick="setWind(0,1,'↓')"      id="w-s" >↓ S</button>
+            <button class="wind-btn" onclick="setWind(0.7,0.7,'↘')" id="w-se" class="active">↘ SE</button>
+          </div>
+          <div style="font-size:10px;color:#48445e;margin-top:3px;">ลม: <span id="wind-lbl" style="color:#8878b8;">↘ SE</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -577,6 +590,7 @@ document.getElementById('loading').style.display = 'none';
 // อัปเดต hint สำหรับ touch device
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
   document.getElementById('hint').innerHTML =
+    '<span id="hint-x" onclick="this.parentElement.style.display=\'none\'">×</span>' +
     '👆 ลากนิ้ว → หมุนมุมมอง<br>' +
     '🤌 บีบ/ขยาย 2 นิ้ว → ซูม<br>' +
     '✌ 2 นิ้วลาก → เลื่อน<br>' +
@@ -1148,6 +1162,8 @@ window.startSimulation = function() {
   applySimColors();
   updateSimUI();
   document.getElementById('sim-panel').style.display = 'block';
+  document.getElementById('sim-bd').classList.remove('mini');
+  document.getElementById('sim-min').textContent = '▾';
   document.getElementById('seir-legend').style.display = 'block';
   document.getElementById('tt-click-row').style.display = 'none';
   document.getElementById('tt-seir-row').style.display = 'flex';
@@ -1230,6 +1246,17 @@ var _origMouseMove = null; // already bound above; patch via seir check in the h
 // (the hover handler already references seir[] for badge; we update tt-seir-state there)
 
 } // end initScene
+
+window.togglePanel = function(id) {
+  document.getElementById(id).classList.toggle('closed');
+};
+
+window.toggleSimBody = function() {
+  var bd  = document.getElementById('sim-bd');
+  var btn = document.getElementById('sim-min');
+  var mini = bd.classList.toggle('mini');
+  btn.textContent = mini ? '▸' : '▾';
+};
 </script>
 </body>
 </html>
