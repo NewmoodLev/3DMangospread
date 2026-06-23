@@ -2,12 +2,13 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>MangoMap — แผนภาพสวนมะม่วง 3D</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0d1117; font-family:'Segoe UI','Sarabun',sans-serif; overflow:hidden; }
-canvas { display:block; }
+body { background:#0d1117; font-family:'Segoe UI','Sarabun',sans-serif; overflow:hidden;
+       -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+canvas { display:block; touch-action: none; }
 
 #topbar {
   position:fixed; top:0; left:0; right:0; height:50px;
@@ -233,7 +234,7 @@ input[type=range] { width:100%; accent-color:#a78bfa; cursor:pointer; }
   🖱 ลากเมาส์ → หมุนมุมมอง<br>
   🖱 Scroll → ซูมเข้า/ออก<br>
   🖱 คลิกขวา+ลาก → เลื่อน<br>
-  🎯 ชี้ต้นไม้ → ดูข้อมูล
+  🎯 ชี้/แตะต้นไม้ → ดูข้อมูล
 </div>
 
 <!-- ═══ Simulation Panel ═══ -->
@@ -406,6 +407,66 @@ function createOrbitControls(camera, domElement, target) {
   }, { passive: false });
   domElement.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
+  // ── Touch support (iPad / mobile) ─────────────────────────────────────────
+  var pinchDist0 = 0, pinchMidX0 = 0, pinchMidY0 = 0;
+
+  domElement.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      state.drag = true; state.rightDrag = false;
+      state.lx = e.touches[0].clientX;
+      state.ly = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      state.drag = false; state.rightDrag = false;
+      var dx = e.touches[1].clientX - e.touches[0].clientX;
+      var dy = e.touches[1].clientY - e.touches[0].clientY;
+      pinchDist0 = Math.sqrt(dx*dx + dy*dy);
+      pinchMidX0 = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      pinchMidY0 = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    }
+  }, { passive: false });
+
+  domElement.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1 && state.drag) {
+      var dx = e.touches[0].clientX - state.lx;
+      var dy = e.touches[0].clientY - state.ly;
+      state.lx = e.touches[0].clientX;
+      state.ly = e.touches[0].clientY;
+      state.dTheta -= dx * 0.007;
+      state.dPhi   -= dy * 0.007;
+    } else if (e.touches.length === 2) {
+      var dx = e.touches[1].clientX - e.touches[0].clientX;
+      var dy = e.touches[1].clientY - e.touches[0].clientY;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if (pinchDist0 > 0) {
+        state.radius *= pinchDist0 / dist;
+        state.radius = Math.max(state.minR, Math.min(state.maxR, state.radius));
+      }
+      pinchDist0 = dist;
+      var midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      var midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      var pdx = midX - pinchMidX0, pdy = midY - pinchMidY0;
+      pinchMidX0 = midX; pinchMidY0 = midY;
+      var fovRad = camera.fov * Math.PI / 180;
+      var h = domElement.clientHeight || window.innerHeight;
+      var scale = (2 * Math.tan(fovRad / 2) * state.radius) / h;
+      state.panX -= pdx * scale;
+      state.panY += pdy * scale;
+    }
+  }, { passive: false });
+
+  domElement.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0) {
+      state.drag = false; state.rightDrag = false; pinchDist0 = 0;
+    } else if (e.touches.length === 1) {
+      state.drag = true;
+      state.lx = e.touches[0].clientX;
+      state.ly = e.touches[0].clientY;
+      pinchDist0 = 0;
+    }
+  }, { passive: false });
+
   function update() {
     // Apply damped rotation
     state.theta += state.dTheta * state.dampF;
@@ -512,6 +573,15 @@ document.body.appendChild(renderer.domElement);
 
 // ซ่อน loading screen
 document.getElementById('loading').style.display = 'none';
+
+// อัปเดต hint สำหรับ touch device
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  document.getElementById('hint').innerHTML =
+    '👆 ลากนิ้ว → หมุนมุมมอง<br>' +
+    '🤌 บีบ/ขยาย 2 นิ้ว → ซูม<br>' +
+    '✌ 2 นิ้วลาก → เลื่อน<br>' +
+    '👆 แตะต้นไม้ → ดูข้อมูล';
+}
 
 // ── OrbitControls ──────────────────────────────────────────────────────────
 var target = new THREE.Vector3(orcharCX, 0, orcharCZ);
@@ -793,6 +863,98 @@ renderer.domElement.addEventListener('click', function(e) {
 
   updateInfectedUI();
 });
+
+// ── Touch: tooltip on tap + toggle infected ────────────────────────────────
+var touchTapX = 0, touchTapY = 0;
+
+renderer.domElement.addEventListener('touchstart', function(e) {
+  if (e.touches.length !== 1) { tip.style.display = 'none'; return; }
+  touchTapX = e.touches[0].clientX;
+  touchTapY = e.touches[0].clientY;
+  mouse2.x =  (touchTapX / innerWidth)  * 2 - 1;
+  mouse2.y = -(touchTapY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mouse2, camera);
+  var hits = ray.intersectObjects(canopyMeshes, false);
+  if (hovMesh) { hovMesh.material.color.setHex(hovOrig); hovMesh = null; }
+  if (hits.length > 0) {
+    var mesh = hits[0].object;
+    var t = mesh.userData.tree;
+    var isInf = !!infected[t.id];
+    hovOrig = (seir.length > 0 && seir[t.id] !== 'S') ? SCOL[seir[t.id]] : getTreeColor(t);
+    mesh.material.color.set(0xffffff);
+    hovMesh = mesh;
+    var zone = t.id<50  ? 'โซน 1 (อายุ 6 ปี)' :
+               t.id<150 ? 'โซน 2 (อายุ 5 ปี)' :
+               t.id<200 ? 'โซน 3 (อายุ 4 ปี)' : 'โซน 4 (อายุ 3 ปี)';
+    document.getElementById('tt-id').textContent   = t.id;
+    document.getElementById('tt-row').textContent  = t.row+1;
+    document.getElementById('tt-col').textContent  = t.col+1;
+    document.getElementById('tt-x').textContent    = t.x;
+    document.getElementById('tt-y').textContent    = t.z;
+    document.getElementById('tt-age').textContent  = t.age;
+    document.getElementById('tt-h').textContent    = t.h.toFixed(2);
+    document.getElementById('tt-zone').textContent = zone;
+    document.getElementById('tt-hfill').style.width = ((t.h-0.7)/0.3*100).toFixed(0)+'%';
+    document.getElementById('tt-inf-badge').style.display = isInf ? 'inline' : 'none';
+    document.getElementById('tt-click-hint').textContent = isInf ? 'แตะเพื่อยกเลิกติดเชื้อ' : 'แตะเพื่อทำเครื่องหมายติดเชื้อ';
+    document.getElementById('tt-click-hint').style.color = isInf ? '#4ade80' : '#f87171';
+    if (seir.length > 0) {
+      var ss = seir[t.id];
+      document.getElementById('tt-seir-state').textContent = SLBL[ss] || ss;
+      document.getElementById('tt-seir-state').style.color = SCOL_CSS[ss] || '#fff';
+    }
+    document.getElementById('hov-id').textContent = '#'+t.id;
+    document.getElementById('hov-h').textContent  = t.h.toFixed(2);
+    var lx = touchTapX + 18, ly = touchTapY - 150;
+    if (lx + 190 > innerWidth)  lx = touchTapX - 200;
+    if (ly < 60) ly = 60;
+    if (ly + 230 > innerHeight) ly = innerHeight - 235;
+    tip.style.left = lx+'px'; tip.style.top = ly+'px';
+    tip.style.display = 'block';
+  } else {
+    tip.style.display = 'none';
+    document.getElementById('hov-id').textContent = '—';
+    document.getElementById('hov-h').textContent  = '—';
+  }
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchmove', function(e) {
+  if (e.touches.length >= 1) {
+    var dx = e.touches[0].clientX - touchTapX;
+    var dy = e.touches[0].clientY - touchTapY;
+    if (Math.sqrt(dx*dx + dy*dy) > 12 || e.touches.length > 1) {
+      tip.style.display = 'none';
+      if (hovMesh) { hovMesh.material.color.setHex(hovOrig); hovMesh = null; }
+    }
+  }
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchend', function(e) {
+  if (e.changedTouches.length !== 1) return;
+  var dx = e.changedTouches[0].clientX - touchTapX;
+  var dy = e.changedTouches[0].clientY - touchTapY;
+  if (Math.sqrt(dx*dx + dy*dy) >= 12) return;
+  // Tap: toggle infected
+  mouse2.x =  (touchTapX / innerWidth)  * 2 - 1;
+  mouse2.y = -(touchTapY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mouse2, camera);
+  var hits = ray.intersectObjects(canopyMeshes, false);
+  if (!hits.length) return;
+  var mesh = hits[0].object;
+  var t    = mesh.userData.tree;
+  if (infected[t.id]) {
+    delete infected[t.id];
+    hovOrig = lerpColor(t.h);
+  } else {
+    infected[t.id] = true;
+    hovOrig = INF_COLOR;
+  }
+  var isInfNow = !!infected[t.id];
+  document.getElementById('tt-inf-badge').style.display = isInfNow ? 'inline' : 'none';
+  document.getElementById('tt-click-hint').textContent  = isInfNow ? 'แตะเพื่อยกเลิกติดเชื้อ' : 'แตะเพื่อทำเครื่องหมายติดเชื้อ';
+  document.getElementById('tt-click-hint').style.color  = isInfNow ? '#4ade80' : '#f87171';
+  updateInfectedUI();
+}, { passive: false });
 
 // ── Resize ─────────────────────────────────────────────────────────────────
 window.addEventListener('resize', function() {
