@@ -942,7 +942,6 @@ function updateSimUI() {
 // ── One animation step ─────────────────────────────────────────────────────
 function advanceDay() {
   if (simDay >= simMaxDay) {
-    // ครบ 7 วัน → หยุดสั้น 900ms แล้ว loop ใหม่
     clearInterval(simTimer); simTimer = null;
     document.getElementById('sim-status-txt').textContent = '🔄 กำลัง loop ใหม่...';
     setTimeout(function() {
@@ -960,6 +959,8 @@ function advanceDay() {
   simDay++;
   applySimColors();
   updateSimUI();
+  var c = countSEIR();
+  if (c.E === 0 && c.I === 0 && simDay > 0) stopSim();
 }
 
 function stopSim() {
