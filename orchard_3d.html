@@ -98,7 +98,7 @@ canvas { display:block; touch-action:none; }
 #sim-panel {
   display:none; position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
   background:rgba(11,10,18,0.97); border:1px solid rgba(78,65,128,0.28); border-radius:9px;
-  z-index:200; width:545px; max-width:95vw;
+  z-index:200; width:400px; max-width:95vw;
   color:#aeaac8; font-size:12px; box-shadow:0 4px 24px rgba(0,0,0,0.55);
   overflow:hidden;
 }
@@ -110,7 +110,7 @@ canvas { display:block; touch-action:none; }
 .sim-sub { color:#48445e; font-size:10px; margin-top:2px; }
 #sim-min { color:#48445e; font-size:12px; cursor:pointer; padding:3px 7px; border-radius:4px; }
 #sim-min:hover { color:#8878b8; background:rgba(255,255,255,0.04); }
-#sim-bd { padding:14px 14px; transition:max-height .24s ease, opacity .2s; max-height:400px; overflow:hidden; opacity:1; }
+#sim-bd { padding:10px 12px; transition:max-height .24s ease, opacity .2s; max-height:400px; overflow:hidden; opacity:1; }
 #sim-bd.mini { max-height:0; opacity:0; padding-top:0; padding-bottom:0; }
 
 .seir-row  { margin-bottom:6px; }
@@ -150,7 +150,7 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
 
 <div id="topbar">
   <div>
-    <h1>🥭 MangoMap — แผนภาพสวนมะม่วง 3D</h1>
+    <h1>MangoMap — แผนภาพสวนมะม่วง 3D</h1>
     <div class="sub">NamDokMai · 260 ต้น · 26×10 · ระยะห่าง 6 ม.</div>
   </div>
   <div class="badge">SEIR Simulation</div>
@@ -189,7 +189,7 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
           <div class="sz-tree" style="height:10px;"></div><span>3 ปี</span>
         </div>
       </div>
-      <div style="color:#384e28;font-size:10px;margin-top:7px;line-height:1.6;">↕ ความสูง = อายุต้น<br>🌿 ขนาดพุ่ม = ค่าสุขภาพ</div>
+      <div style="color:#384e28;font-size:10px;margin-top:7px;line-height:1.6;">↕ ความสูง = อายุต้น<br>ขนาดพุ่ม = ค่าสุขภาพ</div>
     </div>
     <div class="ls" id="seir-legend" style="display:none;">
       <h4>สถานะ SEIR</h4>
@@ -222,10 +222,10 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
       ล้างการติดเชื้อ
     </button>
     <div id="sim-notice" style="display:none;color:#b89020;font-size:10px;margin-top:6px;text-align:center;">
-      ⚠ เลือกต้นติดเชื้อก่อนนะ
+      เลือกต้นติดเชื้อก่อน
     </div>
     <button onclick="startSimulation()" class="sbtn" style="margin-top:8px;width:100%;padding:7px;font-size:12px;font-weight:600;">
-      🧬 พยากรณ์การแพร่ระบาด
+      พยากรณ์การแพร่ระบาด
     </button>
   </div></div>
 </div>
@@ -253,17 +253,17 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
 
 <div id="hint">
   <span id="hint-x" onclick="this.parentElement.style.display='none'">×</span>
-  🖱 ลากเมาส์ → หมุนมุมมอง<br>
-  🖱 Scroll → ซูมเข้า/ออก<br>
-  🖱 คลิกขวา+ลาก → เลื่อน<br>
-  🎯 ชี้/แตะต้นไม้ → ดูข้อมูล
+  ลากเมาส์ → หมุนมุมมอง<br>
+  Scroll → ซูมเข้า/ออก<br>
+  คลิกขวา+ลาก → เลื่อน<br>
+  ชี้/แตะต้นไม้ → ดูข้อมูล
 </div>
 
 <!-- Simulation Panel -->
 <div id="sim-panel">
   <div id="sim-hd">
     <div>
-      <div class="sim-title">🧬 พยากรณ์การแพร่ระบาด</div>
+      <div class="sim-title">พยากรณ์การแพร่ระบาด</div>
       <div class="sim-sub">β=<span id="beta-disp">0.40</span> · σ=0.20 · γ=0.07 · ~12 ม.</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
@@ -273,14 +273,14 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
   </div>
 
   <div id="sim-bd">
-    <div style="display:flex;gap:18px;">
+    <div style="display:flex;gap:12px;">
       <!-- Left: Day + SEIR -->
       <div style="flex:1;min-width:0;">
-        <div style="text-align:center;margin-bottom:10px;">
-          <div style="font-size:10px;color:#48445e;margin-bottom:2px;">วันที่</div>
-          <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;">
-            <div style="font-size:40px;font-weight:700;color:#d8d4f0;line-height:1;font-variant-numeric:tabular-nums;" id="sim-day-num">0</div>
-            <div style="font-size:15px;color:#48445e;font-weight:500;">/ 7</div>
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="font-size:9.5px;color:#48445e;margin-bottom:2px;">วันที่</div>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:3px;">
+            <div style="font-size:26px;font-weight:700;color:#d8d4f0;line-height:1;font-variant-numeric:tabular-nums;" id="sim-day-num">0</div>
+            <div style="font-size:12px;color:#48445e;font-weight:500;">/ 7</div>
           </div>
           <div style="display:flex;gap:5px;justify-content:center;margin:6px 0 3px;">
             <div class="day-dot" id="dd-1"></div><div class="day-dot" id="dd-2"></div>
@@ -309,7 +309,7 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
       </div>
 
       <!-- Right: Controls -->
-      <div style="display:flex;flex-direction:column;gap:9px;min-width:205px;">
+      <div style="display:flex;flex-direction:column;gap:7px;min-width:160px;">
         <div style="display:flex;gap:5px;">
           <button class="sbtn green" id="btn-playpause" onclick="toggleSimPlay()" style="flex:1;font-size:13px;">▶ เล่น</button>
           <button class="sbtn" onclick="stepSimForward()">+1 วัน</button>
@@ -329,7 +329,7 @@ input[type=range] { width:100%; accent-color:#6858a0; cursor:pointer; }
         </div>
         <div>
           <div style="font-size:10px;color:#48445e;margin-bottom:4px;">ทิศทางลม</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:138px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:120px;">
             <button class="wind-btn" onclick="setWind(-0.7,-0.7,'↖')" id="w-nw">↖ NW</button>
             <button class="wind-btn" onclick="setWind(0,-1,'↑')"     id="w-n" >↑ N</button>
             <button class="wind-btn" onclick="setWind(0.7,-0.7,'↗')" id="w-ne">↗ NE</button>
@@ -591,10 +591,10 @@ document.getElementById('loading').style.display = 'none';
 if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
   document.getElementById('hint').innerHTML =
     '<span id="hint-x" onclick="this.parentElement.style.display=\'none\'">×</span>' +
-    '👆 ลากนิ้ว → หมุนมุมมอง<br>' +
-    '🤌 บีบ/ขยาย 2 นิ้ว → ซูม<br>' +
-    '✌ 2 นิ้วลาก → เลื่อน<br>' +
-    '👆 แตะต้นไม้ → ดูข้อมูล';
+    'ลากนิ้ว → หมุนมุมมอง<br>' +
+    'บีบ/ขยาย 2 นิ้ว → ซูม<br>' +
+    '2 นิ้วลาก → เลื่อน<br>' +
+    'แตะต้นไม้ → ดูข้อมูล';
 }
 
 // ── OrbitControls ──────────────────────────────────────────────────────────
@@ -1104,11 +1104,11 @@ function updateSimUI() {
   var active = c.E + c.I;
   var txt;
   if (simDay >= simMaxDay) {
-    txt = '✅ ครบ 7 วัน — ติดเชื้อสะสม ' + (c.I + c.R) + ' ต้น';
+    txt = 'ครบ 7 วัน — ติดเชื้อสะสม ' + (c.I + c.R) + ' ต้น';
   } else if (active > 0) {
     txt = 'กำลังแพร่ — E+I ' + active + ' ต้น';
   } else if (simDay > 0) {
-    txt = '✓ ไม่พบการแพร่ระบาดเพิ่ม';
+    txt = 'ไม่พบการแพร่ระบาดเพิ่ม';
   } else {
     txt = 'กด ▶ เพื่อเริ่มพยากรณ์ 7 วัน';
   }
@@ -1119,7 +1119,7 @@ function updateSimUI() {
 function advanceDay() {
   if (simDay >= simMaxDay) {
     clearInterval(simTimer); simTimer = null;
-    document.getElementById('sim-status-txt').textContent = '🔄 กำลัง loop ใหม่...';
+    document.getElementById('sim-status-txt').textContent = 'กำลัง loop ใหม่...';
     setTimeout(function() {
       if (!simPlaying) return;
       seir = new Array(trees.length).fill('S');
@@ -1172,7 +1172,7 @@ window.startSimulation = function() {
 window.toggleSimPlay = function() {
   simPlaying = !simPlaying;
   if (simPlaying) {
-    document.getElementById('btn-playpause').textContent = '⏸ หยุด';
+    document.getElementById('btn-playpause').textContent = '|| หยุด';
     document.getElementById('btn-playpause').className = 'sbtn';
     simTimer = setInterval(advanceDay, simSpeedMs);
   } else {
